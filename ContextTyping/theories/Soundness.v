@@ -24,7 +24,7 @@ From Denotation Require Import Context
   ConstDenote.
 From ContextTyping Require Import PrimOpContext PrimOpConcreteContext Typing TypingRegular
   SoundnessCaseTactics
-  SoundnessLam
+  SoundnessLam SoundnessVar
   SoundnessApp SoundnessMatch SoundnessFix SoundnessPersist.
 
 Local Notation StoreT := (gmap atom value) (only parsing).
@@ -994,6 +994,8 @@ Proof.
   - eapply fundamental_match_both_case; eauto.
   - eapply fundamental_match_true_case; eauto.
   - eapply fundamental_match_false_case; eauto.
+  - eapply denot_var_right_in_ctx; eauto.
+  - eapply denot_var_precise_in_ctx; eauto.
 Qed.
 
 (** ** Denotational soundness *)

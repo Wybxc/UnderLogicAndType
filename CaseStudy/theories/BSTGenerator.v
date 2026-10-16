@@ -2,10 +2,12 @@
 
     Adapted from CaseStudy/theories/BSTGenerator.v at cd3eace.
     The generator takes a size [r], a lower bound [lo], and a persistent
-    range function. Its under-approximate result specification covers BSTs
-    whose members are exactly the natural numbers in [(lo, lo + r]]. *)
+    exact closed-interval range function. Its under-approximate result
+    specification covers strict BSTs whose members are exactly the natural
+    numbers in [(lo, lo + r]]. *)
 
 From CaseStudy Require Import CaseTypes.
+From ContextTypeLanguage Require Import WF.
 From Stdlib Require Import List.
 
 Import ListNotations.
@@ -24,11 +26,11 @@ Fixpoint bst_between (lo hi : nat) (t : tree) : Prop :=
   | tr_node r l rr =>
       lo <= r < hi /\
       bst_between lo r l /\
-      bst_between r hi rr
+      bst_between (S r) hi rr
   end.
 
 (** [bst_between] uses [lower, upper), so successors encode (lo, lo + r].
-    The BST convention permits equal values in right subtrees. *)
+    Both subtrees are strict: duplicate keys are excluded. *)
 Definition bst_spec (r lo : nat) (t : tree) : Prop :=
   bst_between (S lo) (S (lo + r)) t /\
   (forall n : nat, tree_mem n t <-> lo < n <= lo + r).
@@ -69,16 +71,39 @@ Definition q_nat_lt (a b : value) : type_qualifier :=
       denote_lvar_value (lso_store σ) b = Some (vconst (cnat nb)) /\
       na < nb).
 
+Definition q_nat_le (a b : value) : type_qualifier :=
+  tqual (lvar_value_keys a ∪ lvar_value_keys b)
+    (fun σ => exists na nb : nat,
+      denote_lvar_value (lso_store σ) a = Some (vconst (cnat na)) /\
+      denote_lvar_value (lso_store σ) b = Some (vconst (cnat nb)) /\
+      na <= nb).
+
 (** The y-domain refers to x as arg0. The result refers to x as arg1
-    and y as arg0; ν is the value being refined in each case. *)
+    and y as arg0; ν is the value being refined in each case.
+    Closed endpoints make [range 1 r] valid also when r = 1. Precision
+    requires all outputs to stay in the interval and every point to be
+    reachable, providing both recursive decrease and coverage. *)
 Definition range_ty : context_ty :=
   □ (O[ ℕ ] →
-     over_ty TNat (q_nat_lt arg0 ν) →
-     under_ty TNat
-       (qual_and (q_nat_lt arg1 ν) (q_nat_lt ν arg0))).
+     over_ty TNat (q_nat_le arg0 ν) →
+     precise_ty TNat
+       (qual_and (q_nat_le arg1 ν) (q_nat_le ν arg0))).
 
 Definition bst_gen_ty : context_ty :=
   □ (O[ ℕ ] → O[ ℕ ] → range_ty → UBstBetween).
 
 Definition bst_gen_basic_ty : ty :=
   ℕ →ᵦ ℕ →ᵦ (ℕ →ᵦ ℕ →ᵦ ℕ) →ᵦ Tree.
+
+Lemma bst_gen_ty_well_formed : basic_context_ty ∅ bst_gen_ty.
+Proof.
+  cbn [basic_context_ty wf_context_ty_at bst_gen_ty range_ty UBstBetween
+    over_ty under_ty precise_ty q_nat_le q_tree_bst_range
+    qual_and qual_vars qual_top_on arg0 arg1 arg2 vnu lvar_value_keys
+    erase_ty].
+  unfold lvars_wf_at.
+  repeat split; try reflexivity.
+  all: intros [k | x] H; cbn [lvar_wf_at].
+  all: cbn in H.
+  all: set_solver by lia.
+Qed.

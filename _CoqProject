@@ -122,6 +122,7 @@ ContextTyping/theories/Typing.v
 ContextTyping/theories/TypingRegular.v
 ContextTyping/theories/SoundnessCaseTactics.v
 ContextTyping/theories/SoundnessLam.v
+ContextTyping/theories/SoundnessVar.v
 ContextTyping/theories/SoundnessApp.v
 ContextTyping/theories/SoundnessMatch.v
 ContextTyping/theories/SoundnessFixBase.v
@@ -140,4 +141,6 @@ CaseStudy/theories/Section3Logic.v
 CaseStudy/theories/Section4Extension.v
 CaseStudy/theories/MayMust.v
 CaseStudy/theories/BSTGenerator.v
+CaseStudy/theories/NatArithmetic.v
+CaseStudy/theories/BSTGeneratorProgram.v
 CaseStudy/theories/DisproveMerge.v

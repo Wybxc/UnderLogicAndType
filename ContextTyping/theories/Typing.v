@@ -233,6 +233,19 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx -> tm -> 
       (Γ ⊢ᶜ [Φ; Σ] ef ⋮ τ) ->
       Γ ⊢ᶜ [Φ; Σ] (if vfvar x then et else ef)%core ⋮ τ
 
+  (** T-VarR.  The final additive binding may depend on the prefix. *)
+  | CT_VarR Γ x τ :
+      ((Γ ,, (x ∷ τ)) ⊢wf[Σ] (ret (vfvar x))%core ⋮ τ) ->
+      (Γ ,, (x ∷ τ)) ⊢ᶜ [Φ; Σ] (ret (vfvar x))%core ⋮ τ
+
+  (** T-VarSelf.  Returning a base variable has exactly that variable's
+      value.  The well-formedness premise also checks its base type. *)
+  | CT_VarSelf Γ x b :
+      (Γ ⊢wf[Σ] (ret (vfvar x))%core ⋮
+        precise_ty b (mk_q_eq (vbvar 0) (vfvar x))) ->
+      Γ ⊢ᶜ [Φ; Σ] (ret (vfvar x))%core ⋮
+        precise_ty b (mk_q_eq (vbvar 0) (vfvar x))
+
 where "Γ ⊢ᶜ [ Φ ; Σ ] e ⋮ τ" := (has_context_type Φ Σ Γ e τ).
 
 #[global] Hint Constructors has_context_type : core.
