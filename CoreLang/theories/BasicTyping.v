@@ -8,7 +8,7 @@
     that the notation [Γ ⊢ e ⋮ T] works for both values and terms. *)
 
 From CoreLang Require Export Syntax.
-From CoreLang Require Import LocallyNamelessExtra.
+From CoreLang Require Import LocallyNamelessProps LocallyNamelessExtra.
 
 (** ** Primitive-operation type signatures
 
@@ -63,11 +63,40 @@ with tm_has_type : gmap atom ty → tm → ty → Prop :=
       Γ ⊢ᵥ v1 ⋮ (s1 →ₜ s2) →
       Γ ⊢ᵥ v2 ⋮ s1 →
       Γ ⊢ₑ (tapp v1 v2) ⋮ s2
-  | TT_Match Γ v T et ef :
-      Γ ⊢ᵥ v ⋮ TBase TBool →
-      Γ ⊢ₑ et ⋮ T →
-      Γ ⊢ₑ ef ⋮ T →
-      Γ ⊢ₑ (tmatch v et ef) ⋮ T
+	  | TT_Match Γ v T et ef :
+	      Γ ⊢ᵥ v ⋮ TBase TBool →
+	      Γ ⊢ₑ et ⋮ T →
+	      Γ ⊢ₑ ef ⋮ T →
+	      Γ ⊢ₑ (tmatch v et ef) ⋮ T
+	  | TT_TreeNode Γ root left right :
+	      Γ ⊢ᵥ root ⋮ TBase TNat →
+	      Γ ⊢ᵥ left ⋮ TBase TTree →
+	      Γ ⊢ᵥ right ⋮ TBase TTree →
+	      Γ ⊢ₑ (tnode root left right) ⋮ TBase TTree
+	  | TT_TreeMatch Γ v T eleaf enode (L : aset) :
+	      Γ ⊢ᵥ v ⋮ TBase TTree →
+	      Γ ⊢ₑ eleaf ⋮ T →
+	      (∀ root left right,
+	        root ∉ L → left ∉ L ∪ {[root]} →
+	        right ∉ L ∪ {[root]} ∪ {[left]} →
+	        <[right := TBase TTree]>
+	          (<[left := TBase TTree]>
+	            (<[root := TBase TNat]> Γ))
+	          ⊢ₑ open_tree_node_branch root left right enode ⋮ T) →
+	      Γ ⊢ₑ (tmatchtree v eleaf enode) ⋮ T
+	  | TT_ListCons Γ hd tl :
+	      Γ ⊢ᵥ hd ⋮ TBase TNat →
+	      Γ ⊢ᵥ tl ⋮ TBase TList →
+	      Γ ⊢ₑ (tcons hd tl) ⋮ TBase TList
+	  | TT_ListMatch Γ v T enil econs (L : aset) :
+	      Γ ⊢ᵥ v ⋮ TBase TList →
+	      Γ ⊢ₑ enil ⋮ T →
+	      (∀ hd tl,
+	        hd ∉ L → tl ∉ L ∪ {[hd]} →
+	        <[tl := TBase TList]>
+	          (<[hd := TBase TNat]> Γ)
+	          ⊢ₑ open_list_cons_branch hd tl econs ⋮ T) →
+	      Γ ⊢ₑ (tmatchlist v enil econs) ⋮ T
 
 where "Γ '⊢ᵥ' v '⋮' T" := (value_has_type Γ v T)
   and "Γ '⊢ₑ' e '⋮' T" := (tm_has_type Γ e T).
@@ -99,11 +128,30 @@ Proof.
     eapply H; [exact Hx | by apply insert_mono].
   - econstructor. intros x Hx.
     eapply H; [exact Hx | by apply insert_mono].
-  - econstructor; eauto. intros x Hx.
-    match goal with
-    | IH : ∀ y : atom, y ∉ _ → ∀ Γ', _ |- _ =>
-        eapply IH; [exact Hx | by apply insert_mono]
-    end.
+	  - econstructor; eauto. intros x Hx.
+	    match goal with
+	    | IH : ∀ y : atom, y ∉ _ → ∀ Γ', _ |- _ =>
+	        eapply IH; [exact Hx | by apply insert_mono]
+	    end.
+		  - econstructor; eauto. intros root left right Hroot Hleft Hright.
+		    match goal with
+		    | IH : ∀ root left right : atom,
+		        root ∉ _ →
+		        left ∉ _ ∪ {[root]} →
+		        right ∉ _ ∪ {[root]} ∪ {[left]} →
+		        ∀ Γ', _ |- _ =>
+		        eapply IH; [exact Hroot|exact Hleft|exact Hright|]
+		    end.
+	    repeat apply insert_mono. exact Hsub.
+	  - econstructor; eauto. intros hd tl Hhd Htl.
+	    match goal with
+	    | IH : ∀ hd tl : atom,
+	        hd ∉ _ →
+	        tl ∉ _ ∪ {[hd]} →
+	        ∀ Γ', _ |- _ =>
+	        eapply IH; [exact Hhd|exact Htl|]
+	    end.
+	    repeat apply insert_mono. exact Hsub.
 Qed.
 
 Lemma weakening_tm Γ Γ' e T :
@@ -117,11 +165,30 @@ Proof.
     eapply H; [exact Hx | by apply insert_mono].
   - econstructor. intros x Hx.
     eapply H; [exact Hx | by apply insert_mono].
-  - econstructor; eauto. intros x Hx.
-    match goal with
-    | IH : ∀ y : atom, y ∉ _ → ∀ Γ', _ |- _ =>
-        eapply IH; [exact Hx | by apply insert_mono]
-    end.
+	  - econstructor; eauto. intros x Hx.
+	    match goal with
+	    | IH : ∀ y : atom, y ∉ _ → ∀ Γ', _ |- _ =>
+	        eapply IH; [exact Hx | by apply insert_mono]
+	    end.
+		  - econstructor; eauto. intros root left right Hroot Hleft Hright.
+		    match goal with
+		    | IH : ∀ root left right : atom,
+		        root ∉ _ →
+		        left ∉ _ ∪ {[root]} →
+		        right ∉ _ ∪ {[root]} ∪ {[left]} →
+		        ∀ Γ', _ |- _ =>
+		        eapply IH; [exact Hroot|exact Hleft|exact Hright|]
+		    end.
+	    repeat apply insert_mono. exact Hsub.
+	  - econstructor; eauto. intros hd tl Hhd Htl.
+	    match goal with
+	    | IH : ∀ hd tl : atom,
+	        hd ∉ _ →
+	        tl ∉ _ ∪ {[hd]} →
+	        ∀ Γ', _ |- _ =>
+	        eapply IH; [exact Hhd|exact Htl|]
+	    end.
+	    repeat apply insert_mono. exact Hsub.
 Qed.
 
 Lemma typing_value_lc Γ v T : Γ ⊢ᵥ v ⋮ T → lc_value v.
@@ -138,6 +205,41 @@ Proof.
   induction Hty using tm_has_type_mut with
       (P := fun Γ v T _ => lc_value v);
       eauto.
+Qed.
+
+Lemma insert_tree_branch_subst_commute
+    (Γ : gmap atom ty) (x root left right : atom) (s : ty) :
+  x <> root ->
+  x <> left ->
+  x <> right ->
+  <[right := TBase TTree]>
+    (<[left := TBase TTree]>
+      (<[root := TBase TNat]> (<[x := s]> Γ))) =
+  <[x := s]>
+    (<[right := TBase TTree]>
+      (<[left := TBase TTree]>
+        (<[root := TBase TNat]> Γ))).
+Proof.
+  intros Hroot Hleft Hright.
+  apply map_eq. intros i.
+  repeat rewrite lookup_insert.
+  repeat case_decide; subst; try congruence; reflexivity.
+Qed.
+
+Lemma insert_list_branch_subst_commute
+    (Γ : gmap atom ty) (x hd tl : atom) (s : ty) :
+  x <> hd ->
+  x <> tl ->
+  <[tl := TBase TList]>
+    (<[hd := TBase TNat]> (<[x := s]> Γ)) =
+  <[x := s]>
+    (<[tl := TBase TList]>
+      (<[hd := TBase TNat]> Γ)).
+Proof.
+  intros Hhd Htl.
+  apply map_eq. intros i.
+  repeat rewrite lookup_insert.
+  repeat case_decide; subst; try congruence; reflexivity.
 Qed.
 
 Lemma subst_typing_insert_value Γ x s v T vx :
@@ -200,9 +302,59 @@ Proof.
     rewrite <- subst_open_var_tm by eauto;
     eapply H; [set_solver | | exact Hv'];
     rewrite insert_insert_ne by set_solver; reflexivity.
-  - econstructor; eauto.
-  - econstructor; eauto.
-  - econstructor; eauto.
+	  - econstructor; eauto.
+	  - econstructor; eauto.
+	  - econstructor; eauto.
+	  - econstructor; eauto.
+	  - eapply TT_TreeMatch with (L := L ∪ {[xsub]} ∪ dom Γ0); eauto.
+	    intros root left right Hroot Hleft Hright.
+	    unfold open_tree_node_branch, open_tree_node_branch_value.
+	    assert (Hlc_vx : lc_value vx) by exact (typing_value_lc _ _ _ Hv).
+	    assert (Hv' :
+	      <[right := TBase TTree]>
+	        (<[left := TBase TTree]>
+	          (<[root := TBase TNat]> Γ0)) ⊢ᵥ vx ⋮ s) by
+	      (eapply weakening_value; [exact Hv | apply map_subseteq_spec; intros i Ti Hlook;
+	        rewrite lookup_insert_ne by
+	          (intro; subst; apply elem_of_dom_2 in Hlook; set_solver);
+	        rewrite lookup_insert_ne by
+	          (intro; subst; apply elem_of_dom_2 in Hlook; set_solver);
+	        rewrite lookup_insert_ne by
+	          (intro; subst; apply elem_of_dom_2 in Hlook; set_solver);
+	        exact Hlook]).
+	    replace (vfvar root) with (value_subst xsub vx (vfvar root))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    replace (vfvar left) with (value_subst xsub vx (vfvar left))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    replace (vfvar right) with (value_subst xsub vx (vfvar right))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    rewrite <- subst_open_tm by exact Hlc_vx.
+	    rewrite <- subst_open_tm by exact Hlc_vx.
+	    rewrite <- subst_open_tm by exact Hlc_vx.
+	    eapply H; [set_solver|set_solver|set_solver| | exact Hv'].
+	    apply insert_tree_branch_subst_commute; set_solver.
+	  - econstructor; eauto.
+	  - eapply TT_ListMatch with (L := L ∪ {[xsub]} ∪ dom Γ0); eauto.
+	    intros hd tl Hhd Htl.
+	    unfold open_list_cons_branch, open_list_cons_branch_value.
+	    assert (Hlc_vx : lc_value vx) by exact (typing_value_lc _ _ _ Hv).
+	    assert (Hv' :
+	      <[tl := TBase TList]>
+	        (<[hd := TBase TNat]> Γ0) ⊢ᵥ vx ⋮ s) by
+	      (eapply weakening_value; [exact Hv | apply map_subseteq_spec; intros i Ti Hlook;
+	        rewrite lookup_insert_ne by
+	          (intro; subst; apply elem_of_dom_2 in Hlook; set_solver);
+	        rewrite lookup_insert_ne by
+	          (intro; subst; apply elem_of_dom_2 in Hlook; set_solver);
+	        exact Hlook]).
+	    replace (vfvar hd) with (value_subst xsub vx (vfvar hd))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    replace (vfvar tl) with (value_subst xsub vx (vfvar tl))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    rewrite <- subst_open_tm by exact Hlc_vx.
+	    rewrite <- subst_open_tm by exact Hlc_vx.
+	    eapply H; [set_solver|set_solver| | exact Hv'].
+	    apply insert_list_branch_subst_commute; set_solver.
 Qed.
 
 Lemma subst_typing_insert_tm Γ x s e T vx :
@@ -265,9 +417,59 @@ Proof.
     rewrite <- subst_open_var_tm by eauto;
     eapply H; [set_solver | | exact Hv'];
     rewrite insert_insert_ne by set_solver; reflexivity.
-  - econstructor; eauto.
-  - econstructor; eauto.
-  - econstructor; eauto.
+	  - econstructor; eauto.
+	  - econstructor; eauto.
+	  - econstructor; eauto.
+	  - econstructor; eauto.
+	  - eapply TT_TreeMatch with (L := L ∪ {[xsub]} ∪ dom Γ0); eauto.
+	    intros root left right Hroot Hleft Hright.
+	    unfold open_tree_node_branch, open_tree_node_branch_value.
+	    assert (Hlc_vx : lc_value vx) by exact (typing_value_lc _ _ _ Hv).
+	    assert (Hv' :
+	      <[right := TBase TTree]>
+	        (<[left := TBase TTree]>
+	          (<[root := TBase TNat]> Γ0)) ⊢ᵥ vx ⋮ s) by
+	      (eapply weakening_value; [exact Hv | apply map_subseteq_spec; intros i Ti Hlook;
+	        rewrite lookup_insert_ne by
+	          (intro; subst; apply elem_of_dom_2 in Hlook; set_solver);
+	        rewrite lookup_insert_ne by
+	          (intro; subst; apply elem_of_dom_2 in Hlook; set_solver);
+	        rewrite lookup_insert_ne by
+	          (intro; subst; apply elem_of_dom_2 in Hlook; set_solver);
+	        exact Hlook]).
+	    replace (vfvar root) with (value_subst xsub vx (vfvar root))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    replace (vfvar left) with (value_subst xsub vx (vfvar left))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    replace (vfvar right) with (value_subst xsub vx (vfvar right))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    rewrite <- subst_open_tm by exact Hlc_vx.
+	    rewrite <- subst_open_tm by exact Hlc_vx.
+	    rewrite <- subst_open_tm by exact Hlc_vx.
+	    eapply H; [set_solver|set_solver|set_solver| | exact Hv'].
+	    apply insert_tree_branch_subst_commute; set_solver.
+	  - econstructor; eauto.
+	  - eapply TT_ListMatch with (L := L ∪ {[xsub]} ∪ dom Γ0); eauto.
+	    intros hd tl Hhd Htl.
+	    unfold open_list_cons_branch, open_list_cons_branch_value.
+	    assert (Hlc_vx : lc_value vx) by exact (typing_value_lc _ _ _ Hv).
+	    assert (Hv' :
+	      <[tl := TBase TList]>
+	        (<[hd := TBase TNat]> Γ0) ⊢ᵥ vx ⋮ s) by
+	      (eapply weakening_value; [exact Hv | apply map_subseteq_spec; intros i Ti Hlook;
+	        rewrite lookup_insert_ne by
+	          (intro; subst; apply elem_of_dom_2 in Hlook; set_solver);
+	        rewrite lookup_insert_ne by
+	          (intro; subst; apply elem_of_dom_2 in Hlook; set_solver);
+	        exact Hlook]).
+	    replace (vfvar hd) with (value_subst xsub vx (vfvar hd))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    replace (vfvar tl) with (value_subst xsub vx (vfvar tl))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    rewrite <- subst_open_tm by exact Hlc_vx.
+	    rewrite <- subst_open_tm by exact Hlc_vx.
+	    eapply H; [set_solver|set_solver| | exact Hv'].
+	    apply insert_list_branch_subst_commute; set_solver.
 Qed.
 
 Lemma insert_delete_lookup_ty (Γ : gmap atom ty) x T :

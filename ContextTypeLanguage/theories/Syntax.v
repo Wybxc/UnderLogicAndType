@@ -395,20 +395,50 @@ Definition mk_q_eq (v1 v2 : value) : type_qualifier :=
 (** Default well-founded orders used by context-type fixed points.  This is
     the HAT-style construction: each base type chooses a measure into [nat],
     and recursive calls are required to decrease under that measure. *)
+Fixpoint tree_measure (t : tree) : nat :=
+  match t with
+  | tr_leaf => 0
+  | tr_node n lft rgt => S (n + tree_measure lft + tree_measure rgt)
+  end.
+
+Fixpoint list_measure (xs : list nat) : nat :=
+  match xs with
+  | [] => 0
+  | n :: xs => S (n + list_measure xs)
+  end.
+
 Definition constant_measure_for_base (b : base_ty) (c : constant) : nat :=
   match b, c with
   | TUnit, cunit => 0
   | TUnit, cbool false => 0
   | TUnit, cbool true => 1
   | TUnit, cnat n => n
+  | TUnit, ctree t => tree_measure t
+  | TUnit, clist xs => list_measure xs
   | TNat, cunit => 0
-  | TNat, cnat n => n
   | TNat, cbool false => 0
   | TNat, cbool true => 1
+  | TNat, cnat n => n
+  | TNat, ctree t => tree_measure t
+  | TNat, clist xs => list_measure xs
   | TBool, cunit => 0
   | TBool, cbool false => 0
   | TBool, cbool true => 1
   | TBool, cnat n => n
+  | TBool, ctree t => tree_measure t
+  | TBool, clist xs => list_measure xs
+  | TTree, cunit => 0
+  | TTree, cbool false => 0
+  | TTree, cbool true => 1
+  | TTree, cnat n => n
+  | TTree, ctree t => tree_measure t
+  | TTree, clist xs => list_measure xs
+  | TList, cunit => 0
+  | TList, cbool false => 0
+  | TList, cbool true => 1
+  | TList, cnat n => n
+  | TList, ctree t => tree_measure t
+  | TList, clist xs => list_measure xs
   end.
 
 Definition constant_lt_for_base (b : base_ty) : constant -> constant -> Prop :=

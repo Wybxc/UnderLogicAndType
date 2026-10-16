@@ -130,3 +130,14 @@ ContextTyping/theories/SoundnessFixSelf.v
 ContextTyping/theories/SoundnessFix.v
 ContextTyping/theories/SoundnessPersist.v
 ContextTyping/theories/Soundness.v
+
+-R CaseStudy/theories CaseStudy
+
+CaseStudy/theories/CaseTypes.v
+CaseStudy/theories/Section1Intro.v
+CaseStudy/theories/Section2Typing.v
+CaseStudy/theories/Section3Logic.v
+CaseStudy/theories/Section4Extension.v
+CaseStudy/theories/MayMust.v
+CaseStudy/theories/BSTGenerator.v
+CaseStudy/theories/DisproveMerge.v

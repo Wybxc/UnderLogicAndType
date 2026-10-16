@@ -1,4 +1,5 @@
 Makefile.coq*
+_opam/
 .*.aux
 .*.d
 *.a

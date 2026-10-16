@@ -1,4 +1,5 @@
 From LocallyNameless Require Import Tactics Classes.
+From Stdlib Require Import Lia.
 From CoreLang Require Import Syntax LocallyNamelessProps.
 
 (** * Additional locally-nameless algebra for CoreLang
@@ -141,7 +142,7 @@ Proof.
       (P0 := fun e =>
         tm_subst x ux (tm_subst y uy e) =
         tm_subst y uy (tm_subst x ux e));
-      simpl; try reflexivity.
+      simpl; try reflexivity; try solve [f_equal; eauto; my_set_solver].
   - destruct (decide (y = x0)); subst; simpl.
     + rewrite decide_False by done.
       simpl. rewrite decide_True by reflexivity.
@@ -149,13 +150,6 @@ Proof.
     + destruct (decide (x = x0)); subst; simpl.
       * symmetry. by rewrite subst_fresh_value_proven.
       * by rewrite decide_False by done.
-  - f_equal; eauto; my_set_solver.
-  - f_equal; eauto; my_set_solver.
-  - f_equal; eauto; my_set_solver.
-  - f_equal; eauto; my_set_solver.
-  - f_equal; eauto; my_set_solver.
-  - f_equal; eauto; my_set_solver.
-  - f_equal; eauto; my_set_solver.
 Qed.
 
 Lemma subst_commute_tm x ux y uy e :
@@ -170,7 +164,7 @@ Proof.
       (P := fun v =>
         value_subst x ux (value_subst y uy v) =
         value_subst y uy (value_subst x ux v));
-      simpl; try reflexivity.
+      simpl; try reflexivity; try solve [f_equal; eauto].
   - destruct (decide (y = x0)); subst; simpl.
     + rewrite decide_False by done.
       simpl. rewrite decide_True by reflexivity.
@@ -178,13 +172,6 @@ Proof.
     + destruct (decide (x = x0)); subst; simpl.
       * symmetry. by rewrite subst_fresh_value_proven.
       * by rewrite decide_False by done.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
 Qed.
 
 Lemma subst_subst_value x ux y uy v :
@@ -198,20 +185,13 @@ Proof.
       (P0 := fun e =>
         tm_subst x ux (tm_subst y uy e) =
         tm_subst y (value_subst x ux uy) (tm_subst x ux e));
-      simpl; try reflexivity.
+      simpl; try reflexivity; try solve [f_equal; eauto].
   - destruct (decide (y = x0)); subst; simpl.
     + rewrite decide_False by done.
       simpl. rewrite decide_True by reflexivity. reflexivity.
     + destruct (decide (x = x0)); subst; simpl.
       * symmetry. by rewrite subst_fresh_value_proven.
       * by rewrite decide_False by done.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
 Qed.
 
 Lemma subst_subst_tm x ux y uy e :
@@ -225,20 +205,13 @@ Proof.
       (P := fun v =>
         value_subst x ux (value_subst y uy v) =
         value_subst y (value_subst x ux uy) (value_subst x ux v));
-      simpl; try reflexivity.
+      simpl; try reflexivity; try solve [f_equal; eauto].
   - destruct (decide (y = x0)); subst; simpl.
     + rewrite decide_False by done.
       simpl. rewrite decide_True by reflexivity. reflexivity.
     + destruct (decide (x = x0)); subst; simpl.
       * symmetry. by rewrite subst_fresh_value_proven.
       * by rewrite decide_False by done.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
 Qed.
 
 Lemma close_fresh_rec_value x k v :
@@ -293,6 +266,23 @@ Proof.
   - by rewrite decide_False by my_set_solver.
 Qed.
 
+Local Ltac solve_open_close_branch x Hopen :=
+  injection Hopen; intros; subst; repeat f_equal;
+  repeat match goal with
+  | IH : forall k,
+      open_value k (vfvar x) ?v = ?v ->
+      open_value k (vfvar x) (close_value x k ?v) = ?v,
+    H : open_value ?k (vfvar x) ?v = ?v
+    |- open_value ?k (vfvar x) (close_value x ?k ?v) = ?v =>
+      exact (IH k H)
+  | IH : forall k,
+      open_tm k (vfvar x) ?e = ?e ->
+      open_tm k (vfvar x) (close_tm x k ?e) = ?e,
+    H : open_tm ?k (vfvar x) ?e = ?e
+    |- open_tm ?k (vfvar x) (close_tm x ?k ?e) = ?e =>
+      exact (IH k H)
+  end.
+
 Lemma open_close_var_value_aux x v k :
   open_value k (vfvar x) v = v ->
   open_value k (vfvar x) (close_value x k v) = v.
@@ -301,20 +291,11 @@ Proof.
       (P0 := fun e => ∀ k,
         open_tm k (vfvar x) e = e ->
         open_tm k (vfvar x) (close_tm x k e) = e);
-      simpl; intros k Hopen; try exact Hopen.
+      simpl; intros k Hopen; try exact Hopen;
+      try solve [solve_open_close_branch x Hopen].
   - destruct (decide (x = x0)); subst; simpl.
     + rewrite decide_True by reflexivity. reflexivity.
     + reflexivity.
-  - apply f_equal. injection Hopen as H0. eauto.
-  - apply f_equal. injection Hopen as H0. eauto.
-  - apply f_equal. injection Hopen as H0. eauto.
-  - injection Hopen as H1 H2.
-    f_equal; eauto.
-  - apply f_equal. injection Hopen as H0. eauto.
-  - injection Hopen as H1 H2.
-    f_equal; eauto.
-  - injection Hopen as H1 H2 H3.
-    f_equal; eauto.
 Qed.
 
 Lemma open_close_var_tm_aux x e k :
@@ -325,20 +306,11 @@ Proof.
       (P := fun v => ∀ k,
         open_value k (vfvar x) v = v ->
         open_value k (vfvar x) (close_value x k v) = v);
-      simpl; intros k Hopen; try exact Hopen.
+      simpl; intros k Hopen; try exact Hopen;
+      try solve [solve_open_close_branch x Hopen].
   - destruct (decide (x = x0)); subst; simpl.
     + rewrite decide_True by reflexivity. reflexivity.
     + reflexivity.
-  - apply f_equal. injection Hopen as H0. eauto.
-  - apply f_equal. injection Hopen as H0. eauto.
-  - apply f_equal. injection Hopen as H0. eauto.
-  - injection Hopen as H1 H2.
-    f_equal; eauto.
-  - apply f_equal. injection Hopen as H0. eauto.
-  - injection Hopen as H1 H2.
-    f_equal; eauto.
-  - injection Hopen as H1 H2 H3.
-    f_equal; eauto.
 Qed.
 
 Lemma open_close_var_value x v :
@@ -403,18 +375,12 @@ Proof.
         x ∉ fv_tm e ->
         tm_subst x u (tm_subst z (vfvar x) e) =
         tm_subst z u e);
-      simpl; intros x' z u Hfresh; try reflexivity.
+      simpl; intros x' z u Hfresh;
+      try solve [reflexivity | f_equal; eauto; my_set_solver].
   - destruct (decide (z = x)); subst; simpl.
     + rewrite decide_True by reflexivity. reflexivity.
     + rewrite decide_False by my_set_solver.
       destruct (decide (x' = x)); subst; my_set_solver.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto; my_set_solver.
-  - f_equal; eauto; my_set_solver.
-  - f_equal; eauto; my_set_solver.
-  - f_equal; eauto; my_set_solver.
 Qed.
 
 Lemma subst_shadow_tm x z u e :
@@ -427,18 +393,12 @@ Proof.
         x ∉ fv_value v ->
         value_subst x u (value_subst z (vfvar x) v) =
         value_subst z u v);
-      simpl; intros x' z u Hfresh; try reflexivity.
+      simpl; intros x' z u Hfresh;
+      try solve [reflexivity | f_equal; eauto; my_set_solver].
   - destruct (decide (z = x)); subst; simpl.
     + rewrite decide_True by reflexivity. reflexivity.
     + rewrite decide_False by my_set_solver.
       destruct (decide (x' = x)); subst; my_set_solver.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto; my_set_solver.
-  - f_equal; eauto; my_set_solver.
-  - f_equal; eauto; my_set_solver.
-  - f_equal; eauto; my_set_solver.
 Qed.
 
 Lemma subst_close_value x y u k v :
@@ -507,9 +467,13 @@ Definition open_swap_mutual :
     i <> j ->
     {i ~> v} ({j ~> u} t) = {j ~> u} ({i ~> v} t)).
 Proof.
-  apply value_tm_mutind; intros; autounfold with class_simpl in *; ln_simpl; auto;
-    try solve [autounfold with class_simpl in *; ln_simpl; f_equal; eauto].
-  all: solve_open_swap_bvar.
+	  apply value_tm_mutind; intros; autounfold with class_simpl in *; ln_simpl; auto;
+	    try solve [autounfold with class_simpl in *; ln_simpl; f_equal; eauto; lia].
+	  all: solve_open_swap_bvar.
+	  - f_equal; eauto.
+	    apply H1; eauto; lia.
+  - f_equal; eauto.
+    apply H1; eauto; lia.
 Defined.
 
 Lemma open_swap_value (t : value) i j (u v : value) :
@@ -525,6 +489,123 @@ Lemma open_swap_tm (t : tm) i j (u v : value) :
     i <> j ->
     {i ~> v} ({j ~> u} t) = {j ~> u} ({i ~> v} t).
 Proof. exact (snd open_swap_mutual t i j u v). Qed.
+
+Lemma open_tree_node_branch_open_outer k u root left right e :
+  lc_value u ->
+  open_tree_node_branch root left right (open_tm (k + 3) u e) =
+  open_tm (k + 3) u (open_tree_node_branch root left right e).
+Proof.
+  intros Hu.
+  unfold open_tree_node_branch, open_tree_node_branch_value.
+  autounfold with class_simpl in *; simpl.
+  change
+    (open_tm 2 (vfvar right)
+       (open_tm 1 (vfvar left)
+         (open_tm 0 (vfvar root) (open_tm (k + 3) u e))) =
+     open_tm (k + 3) u
+       (open_tm 2 (vfvar right)
+         (open_tm 1 (vfvar left) (open_tm 0 (vfvar root) e)))).
+  transitivity
+    (open_tm 2 (vfvar right)
+      (open_tm 1 (vfvar left)
+        (open_tm (k + 3) u (open_tm 0 (vfvar root) e)))).
+  { do 2 f_equal.
+    apply open_swap_tm; [exact Hu|constructor|lia]. }
+  transitivity
+    (open_tm 2 (vfvar right)
+      (open_tm (k + 3) u
+        (open_tm 1 (vfvar left) (open_tm 0 (vfvar root) e)))).
+  { f_equal.
+    apply open_swap_tm; [exact Hu|constructor|lia]. }
+  apply open_swap_tm; [exact Hu|constructor|lia].
+Qed.
+
+Lemma open_list_cons_branch_open_outer k u hd tl e :
+  lc_value u ->
+  open_list_cons_branch hd tl (open_tm (k + 2) u e) =
+  open_tm (k + 2) u (open_list_cons_branch hd tl e).
+Proof.
+  intros Hu.
+  unfold open_list_cons_branch, open_list_cons_branch_value.
+  autounfold with class_simpl in *; simpl.
+  change
+    (open_tm 1 (vfvar tl)
+       (open_tm 0 (vfvar hd) (open_tm (k + 2) u e)) =
+     open_tm (k + 2) u
+       (open_tm 1 (vfvar tl) (open_tm 0 (vfvar hd) e))).
+  transitivity
+    (open_tm 1 (vfvar tl)
+      (open_tm (k + 2) u (open_tm 0 (vfvar hd) e))).
+  { f_equal.
+    apply open_swap_tm; [exact Hu|constructor|lia]. }
+  apply open_swap_tm; [exact Hu|constructor|lia].
+Qed.
+
+Lemma subst_tree_node_branch_value root left right vr vl vt enode :
+  root ∉ fv_tm enode ->
+  left ∉ fv_tm enode ->
+  right ∉ fv_tm enode ->
+  root <> left ->
+  root <> right ->
+  left <> right ->
+  left ∉ fv_value vt ->
+  root ∉ fv_value vt ->
+  root ∉ fv_value vl ->
+  lc_value vr ->
+  lc_value vl ->
+  lc_value vt ->
+  {root := vr} ({left := vl} ({right := vt}
+    open_tree_node_branch root left right enode)) =
+  open_tree_node_branch_value vr vl vt enode.
+Proof.
+  intros Hroot_fv Hleft_fv Hright_fv Hroot_left Hroot_right Hleft_right
+    Hleft_vt Hroot_vt Hroot_vl Hvr Hvl Hvt.
+  unfold open_tree_node_branch, open_tree_node_branch_value.
+  repeat rewrite subst_open_tm by assumption.
+  cbn [tm_subst value_subst].
+  destruct (decide (right = right)) as [_|Hneq]; [|congruence].
+  destruct (decide (right = left)) as [Heq|_]; [symmetry in Heq; congruence|].
+  destruct (decide (right = root)) as [Heq|_]; [symmetry in Heq; congruence|].
+  repeat rewrite subst_open_tm by assumption.
+  cbn [tm_subst value_subst].
+  destruct (decide (left = left)) as [_|Hneq]; [|congruence].
+  destruct (decide (left = root)) as [Heq|_]; [symmetry in Heq; congruence|].
+  repeat rewrite subst_open_tm by assumption.
+  cbn [tm_subst value_subst].
+  destruct (decide (root = root)) as [_|Hneq]; [|congruence].
+  rewrite (subst_fresh_value_proven left vl vt) by exact Hleft_vt.
+  rewrite (subst_fresh_value_proven root vr vt) by exact Hroot_vt.
+  rewrite (subst_fresh_value_proven root vr vl) by exact Hroot_vl.
+  rewrite (subst_fresh_tm_proven right vt enode) by exact Hright_fv.
+  rewrite (subst_fresh_tm_proven left vl enode) by exact Hleft_fv.
+  rewrite (subst_fresh_tm_proven root vr enode) by exact Hroot_fv.
+  reflexivity.
+Qed.
+
+Lemma subst_list_cons_branch_value hd tl vh vt econs :
+  hd ∉ fv_tm econs ->
+  tl ∉ fv_tm econs ->
+  hd <> tl ->
+  hd ∉ fv_value vt ->
+  lc_value vh ->
+  lc_value vt ->
+  {hd := vh} ({tl := vt} open_list_cons_branch hd tl econs) =
+  open_list_cons_branch_value vh vt econs.
+Proof.
+  intros Hhd_fv Htl_fv Hhd_tl Hhd_vt Hvh Hvt.
+  unfold open_list_cons_branch, open_list_cons_branch_value.
+  repeat rewrite subst_open_tm by assumption.
+  cbn [tm_subst value_subst].
+  destruct (decide (tl = tl)) as [_|Hneq]; [|congruence].
+  destruct (decide (tl = hd)) as [Heq|_]; [symmetry in Heq; congruence|].
+  repeat rewrite subst_open_tm by assumption.
+  cbn [tm_subst value_subst].
+  destruct (decide (hd = hd)) as [_|Hneq]; [|congruence].
+  rewrite (subst_fresh_value_proven hd vh vt) by exact Hhd_vt.
+  rewrite (subst_fresh_tm_proven tl vt econs) by exact Htl_fv.
+  rewrite (subst_fresh_tm_proven hd vh econs) by exact Hhd_fv.
+  reflexivity.
+Qed.
 
 Lemma open_lc_respect_mutual :
   (forall v' (Hlc : lc_value v') k u w v,
@@ -581,8 +662,20 @@ Proof.
         replace (open_tm 0 (vfvar x) (open_tm (S k) w e))
           with (open_tm (S k) w (open_tm 0 (vfvar x) e))
           by (symmetry; apply open_swap_tm; eauto; lia)
-    end;
-    eapply H0; [symmetry; apply open_swap_tm; eauto; lia | eauto | eauto].
+	    end;
+	    eapply H0; [symmetry; apply open_swap_tm; eauto; lia | eauto | eauto].
+  - eapply LC_matchtree with (L := L); eauto.
+    intros root left right Hroot Hleft Hright.
+    rewrite open_tree_node_branch_open_outer by exact H4.
+    eapply H1; [exact Hroot|exact Hleft|exact Hright| | exact H3 | exact H4].
+    rewrite open_tree_node_branch_open_outer by exact H3.
+    reflexivity.
+  - eapply LC_matchlist with (L := L); eauto.
+    intros hd tl Hhd Htl.
+    rewrite open_list_cons_branch_open_outer by exact H4.
+    eapply H1; [exact Hhd|exact Htl| | exact H3 | exact H4].
+    rewrite open_list_cons_branch_open_outer by exact H3.
+    reflexivity.
 Qed.
 
 Lemma open_lc_respect_value k u w v :

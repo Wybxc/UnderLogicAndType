@@ -20,19 +20,21 @@ The artifact was checked with:
 | Package | Version |
 | --- | --- |
 | [Rocq](https://rocq-prover.org/) | 9.1.0 |
-| [rocq-stdpp](https://gitlab.mpi-sws.org/iris/stdpp) | dev.2026-01-23 |
+| [rocq-stdpp](https://gitlab.mpi-sws.org/iris/stdpp) | dev.2026-01-23.0.217a887d |
 | [coq-hammer](https://github.com/lukaszcz/coqhammer) | 1.3.2+9.1 |
 
-A typical opam setup is:
+Install opam and the platform's C/C++ build tools first (on macOS, the Xcode
+Command Line Tools). Then, from the repository root, create a local opam
+switch. Direct dependencies are declared in `underlogicandtype.opam`, and
+`underlogicandtype.opam.locked` records the complete tested dependency set.
+The switch is stored in the ignored `_opam/` directory.
 
 ```bash
-opam switch create with-rocq-1 ocaml-base-compiler
-eval $(opam env --switch=with-rocq-1)
-
-opam repo add rocq-released https://github.com/rocq-archive/opam-rocq-archive/releases/download/0.0.1/rocq-released-repo.tar.gz
-opam repo add iris-dev https://gitlab.mpi-sws.org/iris/opam/-/raw/master/index
-
-opam install rocq-core.9.1.0 rocq-stdpp.dev.2026-01-23 coq-hammer.1.3.2+9.1
+opam repository add rocq-released https://rocq-prover.org/opam/released --dont-select
+opam repository add iris-dev git+https://gitlab.mpi-sws.org/iris/opam.git --dont-select
+opam switch create . ocaml-base-compiler.4.14.2 --repositories=iris-dev,rocq-released,default
+opam install . --locked --working-dir
+eval $(opam env)
 ```
 
 Build from the repository root with:
@@ -41,6 +43,52 @@ Build from the repository root with:
 rocq makefile -f _CoqProject -o Makefile
 make
 ```
+
+Regenerate `Makefile` after setting up the switch: `Makefile.conf` contains
+machine-specific paths. In a new terminal, run `eval $(opam env)` from this
+directory before building, or use `opam exec -- make` after regeneration.
+
+The project itself is registered with opam, so its dependency constraints are
+respected during upgrades. Third-party dependencies use repository packages;
+no local source pins are required. Inspect the environment with `opam list`,
+`opam pin list`, and `opam repository list`.
+
+For an intentional dependency update, edit `underlogicandtype.opam` as needed,
+then update and verify the environment:
+
+```bash
+opam update
+opam install . --working-dir
+opam lock .
+opam exec -- make clean
+opam exec -- rocq makefile -f _CoqProject -o Makefile
+opam exec -- make
+```
+
+Commit both opam files after verification. Use `--locked` for subsequent
+installations to reproduce the tested dependency versions. Platform tools
+such as Clang and GMP are checked through opam's `conf-*` packages.
+
+### VS Code / VS Rocq
+
+Install the recommended `rocq-prover.vsrocq` extension (the successor to
+VSCoq), then install the editor dependency:
+
+```bash
+opam install . --locked --with-dev-setup --working-dir
+code .
+```
+
+The workspace selects `./_opam/bin/vsrocqtop`, so launching VS Code from the
+Dock also uses this project's switch. VS Rocq reads the load paths from
+`_CoqProject`. The language server is a versioned `with-dev-setup` dependency;
+batch builds do not require it. When updating editor dependencies, use
+`opam install . --with-dev-setup --working-dir` and regenerate the lock with
+`OPAMWITHDEVSETUP=true opam lock .`.
+
+This repository contains Rocq sources only. If an OCaml Platform extension
+reports a missing `ocaml-lsp-server`, disable that extension for this
+workspace; VS Rocq uses its own language server.
 
 As a rough reference point, on an Apple M5 machine with 10 logical CPUs, a
 clean build of this artifact completed in about 2 minutes 33 seconds
@@ -65,9 +113,13 @@ make TIMED=1
   fragment: the deterministic rules and denotations of Sections 3--4 arise
   as the special case without generators or persistence, and those cases are
   included in the same proof development.
-- The checked core language is limited to `Unit`, `Bool`, and `Nat`; it does
-  not include lists or trees.  These are straightforward datatype extensions
-  of the core.  The primitive operators include the usual unary operations
+- The basic language includes `Unit`, `Bool`, `Nat`, natural-number trees,
+  and natural-number lists. The Tree/List STLC extension includes construction,
+  pattern matching, operational semantics, and the corresponding basic-typing
+  metatheory. The context-type typing rules do not add constructors for tree
+  nodes, list cons, or Tree/List matching. `CaseStudy/` contains the imported
+  specification types; see [its scope and provenance](CaseStudy/README.md).
+  The primitive operators include the usual unary operations
   such as `plus1`, `minus1`, and `eq0`, together with random generators such
   as `boolGen` and `natGen`.
 - For simplicity, pattern matching only matches on Boolean discriminees.

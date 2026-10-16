@@ -1,0 +1,10 @@
+{
+  "vsrocq.path": "./_opam/bin/vsrocqtop",
+  "vsrocq.proof.mode": 1,
+  "files.watcherExclude": {
+    "**/_opam/**": true
+  },
+  "search.exclude": {
+    "**/_opam": true
+  }
+}

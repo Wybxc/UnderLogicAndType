@@ -32,7 +32,15 @@ with tm_shift (k : nat) (e : tm) : tm :=
   | tapp v1 v2 => tapp (value_shift k v1) (value_shift k v2)
   | tmatch v et ef =>
       tmatch (value_shift k v) (tm_shift k et) (tm_shift k ef)
-  end.
+  | tnode root lft rgt =>
+      tnode (value_shift k root) (value_shift k lft) (value_shift k rgt)
+	  | tmatchtree v el en =>
+	      tmatchtree (value_shift k v) (tm_shift k el) (tm_shift (k + 3) en)
+	  | tcons hd tl =>
+	      tcons (value_shift k hd) (value_shift k tl)
+	  | tmatchlist v en ec =>
+	      tmatchlist (value_shift k v) (tm_shift k en) (tm_shift (k + 2) ec)
+	  end.
 
 #[global] Instance shift_value_inst : Shift value := value_shift.
 #[global] Instance shift_tm_inst : Shift tm := tm_shift.
@@ -119,6 +127,19 @@ Proof.
   - rewrite H by exact H2.
     rewrite H0 by exact H2.
     rewrite H1 by exact H2. reflexivity.
+  - rewrite H by exact H2.
+    rewrite H0 by exact H2.
+    rewrite H1 by exact H2. reflexivity.
+	  - rewrite H by exact H2.
+	    rewrite H0 by exact H2.
+	    replace (S k + 3) with (S (k + 3)) by lia.
+	    rewrite H1 by lia. reflexivity.
+  - rewrite H by exact H1.
+    rewrite H0 by exact H1. reflexivity.
+  - rewrite H by exact H2.
+    rewrite H0 by exact H2.
+    replace (S k + 2) with (S (k + 2)) by lia.
+    rewrite H1 by lia. reflexivity.
 Qed.
 
 Lemma value_shift_open_value_fvar v k cutoff x :
@@ -168,6 +189,17 @@ Proof.
   - rewrite H by exact H2.
     rewrite H0 by exact H2.
     rewrite H1 by exact H2. reflexivity.
+  - rewrite H by exact H2.
+    rewrite H0 by exact H2.
+    rewrite H1 by exact H2. reflexivity.
+	  - rewrite H by exact H2.
+	    rewrite H0 by exact H2.
+	    rewrite H1 by lia. reflexivity.
+  - rewrite H by exact H1.
+    rewrite H0 by exact H1. reflexivity.
+  - rewrite H by exact H2.
+    rewrite H0 by exact H2.
+    rewrite H1 by lia. reflexivity.
 Qed.
 
 Lemma value_shift_open_value_fvar_before v k cutoff x :
@@ -237,6 +269,129 @@ Proof.
   - rewrite H. reflexivity.
   - rewrite H, H0. reflexivity.
   - rewrite H, H0, H1. reflexivity.
+  - rewrite H, H0, H1. reflexivity.
+  - f_equal.
+    + rewrite H. reflexivity.
+    + rewrite H0. reflexivity.
+    + pose (root := fresh_for (L ∪ fv_tm enode)).
+      assert (Hroot : root ∉ L ∪ fv_tm enode)
+        by (subst root; apply fresh_for_not_in).
+      pose (left0 := fresh_for (L ∪ fv_tm enode ∪ {[root]})).
+      assert (Hleft : left0 ∉ L ∪ fv_tm enode ∪ {[root]})
+        by (subst left0; apply fresh_for_not_in).
+      pose (right0 := fresh_for (L ∪ fv_tm enode ∪ {[root]} ∪ {[left0]})).
+      assert (Hright : right0 ∉ L ∪ fv_tm enode ∪ {[root]} ∪ {[left0]})
+        by (subst right0; apply fresh_for_not_in).
+      assert (Hopen :
+        open_tree_node_branch root left0 right0 (tm_shift (k + 3) enode) =
+        open_tree_node_branch root left0 right0 enode).
+      {
+        unfold open_tree_node_branch, open_tree_node_branch_value.
+        rewrite tm_shift_open_tm_fvar_before by lia.
+        rewrite tm_shift_open_tm_fvar_before by lia.
+        rewrite tm_shift_open_tm_fvar_before by lia.
+        change (tm_shift (k + 3) (open_tree_node_branch root left0 right0 enode) =
+          open_tree_node_branch root left0 right0 enode).
+        rewrite H1 by set_solver.
+        reflexivity.
+      }
+      unfold open_tree_node_branch, open_tree_node_branch_value in Hopen.
+      assert (Hright_shift :
+        right0 ∉ fv_tm
+          (open_tm 1 (vfvar left0)
+            (open_tm 0 (vfvar root) (tm_shift (k + 3) enode)))).
+      {
+        pose proof (open_fv_tm (tm_shift (k + 3) enode) (vfvar root) 0)
+          as Hopen_root.
+        pose proof (open_fv_tm
+          (open_tm 0 (vfvar root) (tm_shift (k + 3) enode)) (vfvar left0) 1)
+          as Hopen_left.
+        rewrite tm_shift_fv in Hopen_root.
+        simpl in Hopen_root, Hopen_left. set_solver.
+      }
+      assert (Hright_plain :
+        right0 ∉ fv_tm
+          (open_tm 1 (vfvar left0) (open_tm 0 (vfvar root) enode))).
+      {
+        pose proof (open_fv_tm enode (vfvar root) 0) as Hopen_root.
+        pose proof (open_fv_tm
+          (open_tm 0 (vfvar root) enode) (vfvar left0) 1) as Hopen_left.
+        simpl in Hopen_root, Hopen_left. set_solver.
+      }
+      apply (f_equal (fun e => close_tm right0 2 e)) in Hopen.
+      rewrite (close_open_var_tm _ right0 2 Hright_shift) in Hopen.
+      rewrite (close_open_var_tm _ right0 2 Hright_plain) in Hopen.
+      assert (Hleft_shift :
+        left0 ∉ fv_tm (open_tm 0 (vfvar root) (tm_shift (k + 3) enode))).
+      {
+        pose proof (open_fv_tm (tm_shift (k + 3) enode) (vfvar root) 0)
+          as Hopen_root.
+        rewrite tm_shift_fv in Hopen_root.
+        simpl in Hopen_root. set_solver.
+      }
+      assert (Hleft_plain :
+        left0 ∉ fv_tm (open_tm 0 (vfvar root) enode)).
+      {
+        pose proof (open_fv_tm enode (vfvar root) 0) as Hopen_root.
+        simpl in Hopen_root. set_solver.
+      }
+      apply (f_equal (fun e => close_tm left0 1 e)) in Hopen.
+      rewrite (close_open_var_tm _ left0 1 Hleft_shift) in Hopen.
+      rewrite (close_open_var_tm _ left0 1 Hleft_plain) in Hopen.
+      assert (Hroot_shift : root ∉ fv_tm (tm_shift (k + 3) enode)).
+      { rewrite tm_shift_fv. set_solver. }
+      assert (Hroot_plain : root ∉ fv_tm enode) by set_solver.
+	      apply (f_equal (fun e => close_tm root 0 e)) in Hopen.
+	      rewrite (close_open_var_tm _ root 0 Hroot_shift) in Hopen.
+	      rewrite (close_open_var_tm _ root 0 Hroot_plain) in Hopen.
+	      exact Hopen.
+  - rewrite H, H0. reflexivity.
+  - f_equal.
+    + rewrite H. reflexivity.
+    + rewrite H0. reflexivity.
+    + pose (hd := fresh_for (L ∪ fv_tm econs)).
+      assert (Hhd : hd ∉ L ∪ fv_tm econs)
+        by (subst hd; apply fresh_for_not_in).
+      pose (tl := fresh_for (L ∪ fv_tm econs ∪ {[hd]})).
+      assert (Htl : tl ∉ L ∪ fv_tm econs ∪ {[hd]})
+        by (subst tl; apply fresh_for_not_in).
+      assert (Hopen :
+        open_list_cons_branch hd tl (tm_shift (k + 2) econs) =
+        open_list_cons_branch hd tl econs).
+      {
+        unfold open_list_cons_branch, open_list_cons_branch_value.
+        rewrite tm_shift_open_tm_fvar_before by lia.
+        rewrite tm_shift_open_tm_fvar_before by lia.
+        change (tm_shift (k + 2) (open_list_cons_branch hd tl econs) =
+          open_list_cons_branch hd tl econs).
+        rewrite H1 by set_solver.
+        reflexivity.
+      }
+      unfold open_list_cons_branch, open_list_cons_branch_value in Hopen.
+      assert (Htl_shift :
+        tl ∉ fv_tm (open_tm 0 (vfvar hd) (tm_shift (k + 2) econs))).
+      {
+        pose proof (open_fv_tm (tm_shift (k + 2) econs) (vfvar hd) 0)
+          as Hopen_hd.
+        rewrite tm_shift_fv in Hopen_hd.
+        simpl in Hopen_hd. set_solver.
+      }
+      assert (Htl_plain :
+        tl ∉ fv_tm (open_tm 0 (vfvar hd) econs)).
+      {
+        pose proof (open_fv_tm econs (vfvar hd) 0) as Hopen_hd.
+        simpl in Hopen_hd. set_solver.
+      }
+      apply (f_equal (fun e => close_tm tl 1 e)) in Hopen.
+      rewrite (close_open_var_tm _ tl 1 Htl_shift) in Hopen.
+      rewrite (close_open_var_tm _ tl 1 Htl_plain) in Hopen.
+      assert (Hhd_shift : hd ∉ fv_tm (tm_shift (k + 2) econs)).
+      { rewrite tm_shift_fv. set_solver. }
+      assert (Hhd_plain : hd ∉ fv_tm econs) by set_solver.
+      apply (f_equal (fun e => close_tm hd 0 e)) in Hopen.
+      rewrite (close_open_var_tm _ hd 0 Hhd_shift) in Hopen.
+      rewrite (close_open_var_tm _ hd 0 Hhd_plain) in Hopen.
+      exact Hopen.
 Qed.
 
 Lemma value_shift_lc_id k v :
@@ -398,14 +553,14 @@ Lemma basic_typing_tapp_tm_fvar_inv Γ e y T :
 Proof.
   unfold tapp_tm.
   intros Hty.
-  inversion Hty as
-    [|Γ0 Tfun Tbody ef ebody L Hef Hbody| | |]; subst.
+	  inversion Hty as
+	    [|Γ0 Tfun Tbody ef ebody L Hef Hbody| | | | | | |]; subst.
   pose (x := fresh_for (L ∪ dom Γ ∪ fv_tm e ∪ {[y]})).
   assert (Hx : x ∉ L ∪ dom Γ ∪ fv_tm e ∪ {[y]})
     by (subst x; apply fresh_for_not_in).
   specialize (Hbody x ltac:(set_solver)).
   change (<[x:=Tfun]> Γ ⊢ₑ tapp (vfvar x) (vfvar y) ⋮ T) in Hbody.
-  inversion Hbody as [| | |Γ1 s1 s2 v1 v2 Hfun Harg|]; subst.
+	  inversion Hbody as [| | |Γ1 s1 s2 v1 v2 Hfun Harg| | | | |]; subst.
   inversion Hfun; subst.
   rewrite lookup_insert in H1.
   destruct (decide (x = x)); [|congruence].
@@ -421,8 +576,8 @@ Lemma basic_typing_tapp_tm_tlete_assoc Γ e1 e2 y T :
   Γ ⊢ₑ tapp_tm (tlete e1 e2) (vfvar y) ⋮ T.
 Proof.
   intros Hty.
-  inversion Hty as
-    [|Γ0 T1 T2 e1' e2' L He1 Hbody| | |]; subst.
+	  inversion Hty as
+	    [|Γ0 T1 T2 e1' e2' L He1 Hbody| | | | | | |]; subst.
   pose (x := fresh_for (L ∪ dom Γ ∪ fv_tm e2 ∪ {[y]})).
   assert (Hx : x ∉ L ∪ dom Γ ∪ fv_tm e2 ∪ {[y]})
     by (subst x; apply fresh_for_not_in).
@@ -459,8 +614,8 @@ Lemma basic_typing_tapp_tm_tlete_assoc_rev Γ e1 e2 y T :
 Proof.
   intros Hty.
   apply basic_typing_tapp_tm_fvar_inv in Hty as [Tx [Hlet Hy]].
-  inversion Hlet as
-    [|Γ0 T1 T2 e1' e2' L He1 Hbody| | |]; subst.
+	  inversion Hlet as
+	    [|Γ0 T1 T2 e1' e2' L He1 Hbody| | | | | | |]; subst.
   eapply TT_Let with (L := L ∪ dom Γ ∪ fv_tm e2 ∪ {[y]}).
   - exact He1.
   - intros z Hz.

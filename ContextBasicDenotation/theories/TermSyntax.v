@@ -43,6 +43,10 @@ Proof.
   - rewrite lvars_fv_union, H, H0. reflexivity.
   - apply H.
   - rewrite lvars_fv_union, H, H0. reflexivity.
+	  - rewrite !lvars_fv_union, H, H0, H1. set_solver.
+	  - rewrite !lvars_fv_union, H, H0, H1. set_solver.
+	  - rewrite !lvars_fv_union, H, H0, H1. set_solver.
+  - rewrite lvars_fv_union, H, H0. reflexivity.
   - rewrite !lvars_fv_union, H, H0, H1. set_solver.
 Qed.
 
@@ -109,6 +113,14 @@ Proof.
   - rewrite H. reflexivity.
   - rewrite lvars_at_depth_union, H, H0. reflexivity.
   - rewrite !lvars_at_depth_union, H, H0, H1. reflexivity.
+  - rewrite !lvars_at_depth_union, H, H0, H1. reflexivity.
+  - rewrite !lvars_at_depth_union, H, H0, H1.
+    replace (c + 3 + d) with (c + d + 3) by lia.
+    reflexivity.
+  - rewrite lvars_at_depth_union, H, H0. reflexivity.
+  - rewrite !lvars_at_depth_union, H, H0, H1.
+    replace (c + 2 + d) with (c + d + 2) by lia.
+    reflexivity.
 Qed.
 
 Lemma value_lvars_at_depth v c d :
@@ -183,6 +195,23 @@ Proof.
     rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite H1 by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite <- !set_swap_union. set_solver.
+  - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite H1 by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite <- !set_swap_union. set_solver.
+  - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
+    replace (d + k + 3) with (d + 3 + k) by lia.
+    rewrite H1 by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite <- !set_swap_union. set_solver.
+  - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite <- set_swap_union. reflexivity.
+  - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
+    replace (d + k + 2) with (d + 2 + k) by lia.
+    rewrite H1 by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite <- !set_swap_union. set_solver.
 Qed.
 
 Lemma value_lvars_at_open v d k y :
@@ -208,6 +237,79 @@ Proof.
   rewrite tm_lvars_at_fv. exact Hy.
 Qed.
 
+Lemma lvars_bv_at_depth3_empty_of_open012 root left right D :
+  lvars_bv (lvars_open 2 right (lvars_open 1 left (lvars_open 0 root D))) = ∅ ->
+  lvars_bv (lvars_at_depth 3 D) = ∅.
+Proof.
+  intros Hopen.
+  apply set_eq. intros k.
+  rewrite elem_of_empty.
+  split; [|set_solver].
+  intros Hk.
+  rewrite lvars_bv_elem in Hk.
+  apply lvars_at_depth_elem in Hk as [u [Hu Hdepth]].
+  destruct u as [n|x]; cbn [logic_var_at_depth] in Hdepth; [|discriminate].
+  destruct (decide (3 <= n)) as [H3n|H3n]; [|discriminate].
+  inversion Hdepth. subst k.
+  assert (LVBound n ∈
+    lvars_open 2 right (lvars_open 1 left (lvars_open 0 root D))) as Hopened.
+  {
+    rewrite !elem_of_set_swap.
+    match goal with
+    | |- ?u ∈ D =>
+        replace u with (LVBound n) by
+          (unfold swap; repeat destruct decide; try discriminate;
+           try match goal with H : LVBound _ = LVBound _ |- _ =>
+             inversion H; lia
+           end; reflexivity)
+    end.
+    exact Hu.
+  }
+  assert (n ∈ lvars_bv
+    (lvars_open 2 right (lvars_open 1 left (lvars_open 0 root D)))) as Hn.
+  { rewrite lvars_bv_elem. exact Hopened. }
+  change (n ∈ lvars_bv
+    ((fun k x => set_swap (LVBound k) (LVFree x)) 2 right
+      ((fun k x => set_swap (LVBound k) (LVFree x)) 1 left
+        ((fun k x => set_swap (LVBound k) (LVFree x)) 0 root D)))) in Hn.
+  set_solver.
+Qed.
+
+Lemma lvars_bv_at_depth2_empty_of_open01 hd tl D :
+  lvars_bv (lvars_open 1 tl (lvars_open 0 hd D)) = ∅ ->
+  lvars_bv (lvars_at_depth 2 D) = ∅.
+Proof.
+  intros Hopen.
+  apply set_eq. intros k.
+  rewrite elem_of_empty.
+  split; [|set_solver].
+  intros Hk.
+  rewrite lvars_bv_elem in Hk.
+  apply lvars_at_depth_elem in Hk as [u [Hu Hdepth]].
+  destruct u as [n|x]; cbn [logic_var_at_depth] in Hdepth; [|discriminate].
+  destruct (decide (2 <= n)) as [H2n|H2n]; [|discriminate].
+  inversion Hdepth. subst k.
+  assert (LVBound n ∈ lvars_open 1 tl (lvars_open 0 hd D)) as Hopened.
+  {
+    rewrite !elem_of_set_swap.
+    match goal with
+    | |- ?u ∈ D =>
+        replace u with (LVBound n) by
+          (unfold swap; repeat destruct decide; try discriminate;
+           try match goal with H : LVBound _ = LVBound _ |- _ =>
+             inversion H; lia
+           end; reflexivity)
+    end.
+    exact Hu.
+  }
+  assert (n ∈ lvars_bv (lvars_open 1 tl (lvars_open 0 hd D))) as Hn.
+  { rewrite lvars_bv_elem. exact Hopened. }
+  change (n ∈ lvars_bv
+    ((fun k x => set_swap (LVBound k) (LVFree x)) 1 tl
+      ((fun k x => set_swap (LVBound k) (LVFree x)) 0 hd D))) in Hn.
+  set_solver.
+Qed.
+
 Lemma value_tm_lvars_no_bv_of_lc_mutual :
   (forall v,
       lc_value v ->
@@ -225,9 +327,13 @@ Proof.
     (fun T vf L Hbody IH => _)
     (fun v Hlc IH => IH)
     (fun e1 e2 L Hlc1 IH1 Hbody IH2 => _)
-    (fun op v Hlc IH => IH)
-    (fun v1 v2 Hlc1 IH1 Hlc2 IH2 => _)
-    (fun v et ef Hlcv IHv Hlcet IHet Hlcef IHef => _)).
+	    (fun op v Hlc IH => IH)
+	    (fun v1 v2 Hlc1 IH1 Hlc2 IH2 => _)
+	    (fun v et ef Hlcv IHv Hlcet IHet Hlcef IHef => _)
+	    (fun root left right Hlcroot IHroot Hlcleft IHleft Hlcright IHright => _)
+	    (fun v eleaf enode L Hlcv IHv Hlcleaf IHeleaf Hbody IHnode => _)
+	    (fun hd tl Hlchd IHhd Hlctl IHtl => _)
+	    (fun v enil econs L Hlcv IHv Hlcnil IHnil Hbody IHcons => _)).
   - cbn [value_lvars value_lvars_at]. reflexivity.
   - cbn [value_lvars value_lvars_at].
     apply lvars_bv_singleton_free_atom.
@@ -282,6 +388,111 @@ Proof.
     change (tm_lvars_at 0 et) with (tm_lvars et).
     change (tm_lvars_at 0 ef) with (tm_lvars ef).
     rewrite !lvars_bv_union, IHv, IHet, IHef. set_solver.
+  - cbn [value_lvars tm_lvars value_lvars_at tm_lvars_at].
+    change (value_lvars_at 0 root) with (value_lvars root).
+    change (value_lvars_at 0 left) with (value_lvars left).
+    change (value_lvars_at 0 right) with (value_lvars right).
+    rewrite !lvars_bv_union, IHroot, IHleft, IHright. set_solver.
+  - cbn [value_lvars tm_lvars value_lvars_at tm_lvars_at].
+    change (value_lvars_at 0 v) with (value_lvars v).
+    change (tm_lvars_at 0 eleaf) with (tm_lvars eleaf).
+    rewrite !lvars_bv_union, IHv, IHeleaf.
+    pose (root := fresh_for (L ∪ fv_tm enode)).
+    assert (HrootL : root ∉ L) by
+      (subst root; pose proof (fresh_for_not_in (L ∪ fv_tm enode)); set_solver).
+    assert (Hrootfv : root ∉ fv_tm enode) by
+      (subst root; pose proof (fresh_for_not_in (L ∪ fv_tm enode)); set_solver).
+    pose (left0 := fresh_for (L ∪ fv_tm enode ∪ {[root]})).
+    assert (HleftL : left0 ∉ L) by
+      (subst left0; pose proof (fresh_for_not_in (L ∪ fv_tm enode ∪ {[root]}));
+       set_solver).
+    assert (Hleftfv : left0 ∉ fv_tm enode) by
+      (subst left0; pose proof (fresh_for_not_in (L ∪ fv_tm enode ∪ {[root]}));
+       set_solver).
+    assert (Hleft_root : left0 <> root) by
+      (subst left0; pose proof (fresh_for_not_in (L ∪ fv_tm enode ∪ {[root]}));
+       set_solver).
+    pose (right0 := fresh_for (L ∪ fv_tm enode ∪ {[root]} ∪ {[left0]})).
+    assert (HrightL : right0 ∉ L) by
+      (subst right0;
+       pose proof (fresh_for_not_in (L ∪ fv_tm enode ∪ {[root]} ∪ {[left0]}));
+       set_solver).
+    assert (Hrightfv : right0 ∉ fv_tm enode) by
+      (subst right0;
+       pose proof (fresh_for_not_in (L ∪ fv_tm enode ∪ {[root]} ∪ {[left0]}));
+       set_solver).
+    assert (Hright_root : right0 <> root) by
+      (subst right0;
+       pose proof (fresh_for_not_in (L ∪ fv_tm enode ∪ {[root]} ∪ {[left0]}));
+       set_solver).
+	    assert (Hright_left : right0 <> left0) by
+	      (subst right0;
+	       pose proof (fresh_for_not_in (L ∪ fv_tm enode ∪ {[root]} ∪ {[left0]}));
+	       set_solver).
+	    assert (Hleft_nested : left0 ∉ L ∪ {[root]}) by set_solver.
+	    assert (Hright_nested : right0 ∉ L ∪ {[root]} ∪ {[left0]}) by set_solver.
+	    specialize (IHnode root left0 right0 HrootL Hleft_nested Hright_nested).
+    unfold open_tree_node_branch, open_tree_node_branch_value in IHnode.
+    rewrite tm_lvars_open in IHnode.
+    2: {
+      pose proof (open_fv_tm
+        (open_tm 1 (vfvar left0) (open_tm 0 (vfvar root) enode))
+        (vfvar right0) 2) as Hfv.
+      pose proof (open_fv_tm
+        (open_tm 0 (vfvar root) enode) (vfvar left0) 1) as Hfv_left.
+      pose proof (open_fv_tm enode (vfvar root) 0) as Hfv_root.
+      cbn [fv_value] in *. set_solver.
+    }
+    rewrite tm_lvars_open in IHnode.
+    2: {
+      pose proof (open_fv_tm
+        (open_tm 0 (vfvar root) enode) (vfvar left0) 1) as Hfv_left.
+      pose proof (open_fv_tm enode (vfvar root) 0) as Hfv_root.
+      cbn [fv_value] in *. set_solver.
+    }
+    rewrite tm_lvars_open in IHnode by exact Hrootfv.
+    apply lvars_bv_at_depth3_empty_of_open012 in IHnode.
+    rewrite tm_lvars_depth in IHnode.
+    change (tm_lvars_at (0 + 3) enode) with (tm_lvars_at 3 enode).
+    rewrite IHnode. set_solver.
+  - cbn [value_lvars tm_lvars value_lvars_at tm_lvars_at].
+    change (value_lvars_at 0 hd) with (value_lvars hd).
+    change (value_lvars_at 0 tl) with (value_lvars tl).
+    rewrite lvars_bv_union, IHhd, IHtl. set_solver.
+  - cbn [value_lvars tm_lvars value_lvars_at tm_lvars_at].
+    change (value_lvars_at 0 v) with (value_lvars v).
+    change (tm_lvars_at 0 enil) with (tm_lvars enil).
+    rewrite !lvars_bv_union, IHv, IHnil.
+    pose (hd := fresh_for (L ∪ fv_tm econs)).
+    assert (HhdL : hd ∉ L) by
+      (subst hd; pose proof (fresh_for_not_in (L ∪ fv_tm econs)); set_solver).
+    assert (Hhdfv : hd ∉ fv_tm econs) by
+      (subst hd; pose proof (fresh_for_not_in (L ∪ fv_tm econs)); set_solver).
+    pose (tl := fresh_for (L ∪ fv_tm econs ∪ {[hd]})).
+    assert (HtlL : tl ∉ L) by
+      (subst tl; pose proof (fresh_for_not_in (L ∪ fv_tm econs ∪ {[hd]}));
+       set_solver).
+    assert (Htlfv : tl ∉ fv_tm econs) by
+      (subst tl; pose proof (fresh_for_not_in (L ∪ fv_tm econs ∪ {[hd]}));
+       set_solver).
+    assert (Htl_hd : tl <> hd) by
+      (subst tl; pose proof (fresh_for_not_in (L ∪ fv_tm econs ∪ {[hd]}));
+       set_solver).
+    assert (Htl_nested : tl ∉ L ∪ {[hd]}) by set_solver.
+    specialize (IHcons hd tl HhdL Htl_nested).
+    unfold open_list_cons_branch, open_list_cons_branch_value in IHcons.
+    rewrite tm_lvars_open in IHcons.
+    2: {
+      pose proof (open_fv_tm
+        (open_tm 0 (vfvar hd) econs) (vfvar tl) 1) as Hfv_tl.
+      pose proof (open_fv_tm econs (vfvar hd) 0) as Hfv_hd.
+      cbn [fv_value] in *. set_solver.
+    }
+    rewrite tm_lvars_open in IHcons by exact Hhdfv.
+    apply lvars_bv_at_depth2_empty_of_open01 in IHcons.
+    rewrite tm_lvars_depth in IHcons.
+    change (tm_lvars_at (0 + 2) econs) with (tm_lvars_at 2 econs).
+    rewrite IHcons. set_solver.
 Qed.
 
 Lemma value_lvars_no_bv_of_lc v :
@@ -521,6 +732,21 @@ Proof.
     + apply H. rewrite !lvars_bv_union in H2. set_solver.
     + apply H0. rewrite !lvars_bv_union in H2. set_solver.
     + apply H1. rewrite !lvars_bv_union in H2. set_solver.
+  - f_equal.
+    + apply H. rewrite !lvars_bv_union in H2. set_solver.
+    + apply H0. rewrite !lvars_bv_union in H2. set_solver.
+    + apply H1. rewrite !lvars_bv_union in H2. set_solver.
+  - f_equal.
+    + apply H. rewrite !lvars_bv_union in H2. set_solver.
+    + apply H0. rewrite !lvars_bv_union in H2. set_solver.
+    + apply H1. rewrite !lvars_bv_union in H2. set_solver.
+  - f_equal.
+    + apply H. rewrite lvars_bv_union in H1. set_solver.
+    + apply H0. rewrite lvars_bv_union in H1. set_solver.
+  - f_equal.
+    + apply H. rewrite !lvars_bv_union in H2. set_solver.
+    + apply H0. rewrite !lvars_bv_union in H2. set_solver.
+    + apply H1. rewrite !lvars_bv_union in H2. set_solver.
 Qed.
 
 Lemma open_tm_shift_no_bv d x e :
@@ -730,6 +956,21 @@ Proof.
   - rewrite H by exact H2.
     rewrite H0 by exact H2.
     rewrite H1 by exact H2. reflexivity.
+  - rewrite (H d k H2).
+    rewrite (H0 d k H2).
+    rewrite (H1 d k H2). reflexivity.
+  - rewrite (H d k H2).
+    rewrite (H0 d k H2).
+    replace (S d + 3) with (S (d + 3)) by lia.
+    rewrite (H1 (d + 3) (k + 3)) by lia.
+    reflexivity.
+  - rewrite H by exact H1.
+    rewrite H0 by exact H1. reflexivity.
+  - rewrite (H d k H2).
+    rewrite (H0 d k H2).
+    replace (S d + 2) with (S (d + 2)) by lia.
+    rewrite (H1 (d + 2) (k + 2)) by lia.
+    reflexivity.
 Qed.
 
 Lemma value_lvars_at_shift_under v d k :
@@ -775,6 +1016,24 @@ Proof.
     rewrite tm_lvars_at_shift_under by lia.
     cbn [tm_lvars_at].
     rewrite !value_lvars_at_bound0_under. set_solver.
+  - rewrite !value_lvars_at_shift_under by lia.
+    cbn [tm_lvars_at].
+    rewrite !value_lvars_at_bound0_under. set_solver.
+  - rewrite value_lvars_at_shift_under by lia.
+    rewrite tm_lvars_at_shift_under by lia.
+    replace (S d + 3) with (S (d + 3)) by lia.
+    rewrite tm_lvars_at_shift_under by lia.
+    cbn [tm_lvars_at].
+    rewrite !value_lvars_at_bound0_under. set_solver.
+  - rewrite !value_lvars_at_shift_under by lia.
+    cbn [tm_lvars_at].
+    rewrite !value_lvars_at_bound0_under. set_solver.
+  - rewrite value_lvars_at_shift_under by lia.
+    rewrite tm_lvars_at_shift_under by lia.
+    replace (S d + 2) with (S (d + 2)) by lia.
+    rewrite tm_lvars_at_shift_under by lia.
+    cbn [tm_lvars_at].
+    rewrite !value_lvars_at_bound0_under. set_solver.
 Qed.
 
 Lemma tm_lvars_at_tapp_shift0_bound0 e d :
@@ -817,11 +1076,26 @@ with lstore_instantiate_tm_split_at
   | tapp v1 v2 =>
       tapp (lstore_instantiate_value_split_at d σf σb v1)
         (lstore_instantiate_value_split_at d σf σb v2)
-  | tmatch v et ef =>
-      tmatch (lstore_instantiate_value_split_at d σf σb v)
-        (lstore_instantiate_tm_split_at d σf σb et)
-        (lstore_instantiate_tm_split_at d σf σb ef)
-  end.
+	  | tmatch v et ef =>
+	      tmatch (lstore_instantiate_value_split_at d σf σb v)
+	        (lstore_instantiate_tm_split_at d σf σb et)
+	        (lstore_instantiate_tm_split_at d σf σb ef)
+	  | tnode root lft rgt =>
+	      tnode (lstore_instantiate_value_split_at d σf σb root)
+	        (lstore_instantiate_value_split_at d σf σb lft)
+	        (lstore_instantiate_value_split_at d σf σb rgt)
+		  | tmatchtree v eleaf enode =>
+		      tmatchtree (lstore_instantiate_value_split_at d σf σb v)
+		        (lstore_instantiate_tm_split_at d σf σb eleaf)
+		        (lstore_instantiate_tm_split_at (d + 3) σf σb enode)
+		  | tcons hd tl =>
+		      tcons (lstore_instantiate_value_split_at d σf σb hd)
+		        (lstore_instantiate_value_split_at d σf σb tl)
+		  | tmatchlist v enil econs =>
+		      tmatchlist (lstore_instantiate_value_split_at d σf σb v)
+		        (lstore_instantiate_tm_split_at d σf σb enil)
+		        (lstore_instantiate_tm_split_at (d + 2) σf σb econs)
+		  end.
 
 Definition lstore_instantiate_value_at
     (d : nat) (σ : LStoreT) (v : value) : value :=
@@ -904,6 +1178,10 @@ Proof.
   - f_equal. apply H. exact H0.
   - f_equal; [apply H | apply H0]; set_solver.
   - f_equal; [apply H | apply H0 | apply H1]; set_solver.
+  - f_equal; [apply H | apply H0 | apply H1]; set_solver.
+  - f_equal; [apply H | apply H0 | apply H1]; set_solver.
+  - f_equal; [apply H | apply H0]; set_solver.
+  - f_equal; [apply H | apply H0 | apply H1]; set_solver.
 Qed.
 
 Lemma lstore_instantiate_tm_at_restrict_lvars e d (σ : LStoreT) X :
@@ -981,6 +1259,10 @@ Proof.
   - f_equal. apply H. exact H0.
   - f_equal; [apply H | apply H0]; set_solver.
   - f_equal; [apply H | apply H0 | apply H1]; set_solver.
+  - f_equal; [apply H | apply H0 | apply H1]; set_solver.
+  - f_equal; [apply H | apply H0 | apply H1]; set_solver.
+  - f_equal; [apply H | apply H0]; set_solver.
+  - f_equal; [apply H | apply H0 | apply H1]; set_solver.
 Qed.
 
 Lemma lstore_instantiate_tm_split_restrict_fv d (σf : StoreT) σb e X :
@@ -1035,6 +1317,14 @@ Proof.
   - rewrite subst_map_tprim. f_equal. apply H. exact H0.
   - rewrite subst_map_tapp. f_equal; [apply H | apply H0]; exact H1.
   - rewrite subst_map_tmatch. repeat f_equal;
+      [apply H | apply H0 | apply H1]; exact H2.
+  - rewrite subst_map_tnode. repeat f_equal;
+      [apply H | apply H0 | apply H1]; exact H2.
+	  - rewrite subst_map_tmatchtree. repeat f_equal;
+	      [apply H | apply H0 | apply H1]; exact H2.
+  - rewrite subst_map_tcons. repeat f_equal;
+      [apply H | apply H0]; exact H1.
+  - rewrite subst_map_tmatchlist. repeat f_equal;
       [apply H | apply H0 | apply H1]; exact H2.
 Qed.
 
@@ -1105,6 +1395,18 @@ Proof.
   - f_equal. apply H; set_solver.
   - f_equal; [apply H | apply H0]; set_solver.
   - f_equal; [apply H | apply H0 | apply H1]; set_solver.
+  - f_equal; [apply H | apply H0 | apply H1]; set_solver.
+  - f_equal.
+    + apply H; set_solver.
+    + apply H0; set_solver.
+    + replace (S d + 3) with (S (d + 3)) by lia.
+      apply H1; set_solver.
+  - f_equal; [apply H | apply H0]; set_solver.
+  - f_equal.
+    + apply H; set_solver.
+    + apply H0; set_solver.
+    + replace (S d + 2) with (S (d + 2)) by lia.
+      apply H1; set_solver.
 Qed.
 
 Lemma lstore_instantiate_tm_split_insert_open

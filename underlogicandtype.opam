@@ -1,0 +1,21 @@
+opam-version: "2.0"
+synopsis: "Rocq proofs for Context Types"
+description: "Mechanization of context types, resource semantics, and soundness."
+maintainer: "https://github.com/zhezhouzz/UnderLogicAndType/issues"
+authors: "Zhe Zhou"
+homepage: "https://github.com/zhezhouzz/UnderLogicAndType"
+bug-reports: "https://github.com/zhezhouzz/UnderLogicAndType/issues"
+dev-repo: "git+https://github.com/zhezhouzz/UnderLogicAndType.git"
+license: "MIT"
+depends: [
+  "ocaml" {>= "4.14.0" & < "5.5"}
+  "rocq-core" {= "9.1.0"}
+  "rocq-stdlib" {= "9.0.0"}
+  "rocq-stdpp" {= "dev.2026-01-23.0.217a887d"}
+  "coq-hammer" {= "1.3.2+9.1"}
+  "vsrocq-language-server" {with-dev-setup & = "2.4.3+1"}
+]
+build: [
+  ["rocq" "makefile" "-f" "_CoqProject" "-o" "Makefile"]
+  [make "-j%{jobs}%"]
+]
