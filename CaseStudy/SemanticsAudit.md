@@ -173,3 +173,15 @@ qualifier 的子类型，再由纤维分类合并。最后封装两个箭头和�
 `Print Assumptions` 对两个 typing 定理和 `Fundamental` 输出相同的既有假设：
 经典排中律、经典不定描述、函数外延性、命题外延性和证明无关性。
 没有新增公理或 `Admitted`。
+
+## 后续实现：BST 的完整 typing 已完成
+
+`BSTGeneratorContextTyping.bst_gen_type_judgement_holds` 现已证明原始
+`bst_gen_type_judgement`，包含最外层 `□`。实现沿用实际闭合生成器的尺寸语法
+强归纳，结合条件树覆盖和基础 Under 的纤维分类；没有更改本审查中的指称语义
+或 `CT_Fix`，也没有加入候选 `CT_FixNatCases`。
+
+`bst_gen_denotational_sound` 将完整推导接入 `concrete_Fundamental`。全项目构建、
+最终模块及递归依赖的独立内核检查通过；最终 typing 与 soundness 的假设仍是
+上述五项项目既有基础假设。具体接口及证据见
+[BSTTypingPlan.md](BSTTypingPlan.md) 的“完整 typing 的机器证明”。

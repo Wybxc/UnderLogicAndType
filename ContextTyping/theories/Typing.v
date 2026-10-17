@@ -3,14 +3,14 @@
     Well-formedness predicates, auxiliary semantic relations, primitive
     operation signatures, and declarative typing rules for context types. *)
 
-From CoreLang Require Import BasicTyping BasicTypingProps Sugar.
+From CoreLang Require Import BasicTyping BasicTypingProps Sugar Choice.
 From ContextLogic Require Import FormulaSemantics.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface.
 From ContextTypeLanguage Require Import WF.
 From ContextBasicDenotation Require Import BasicTypingFormula.
 From Denotation Require Import Context TypeDenote.
-From Denotation Require Import TypeEquivTermBase.
+From Denotation Require Import TypeEquivTermBase TreeCoverage.
 From ContextTyping Require Import PrimOpContext.
 
 Local Notation WorldT := (World (V := value)) (only parsing).
@@ -297,6 +297,30 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx -> tm -> 
         forall σ mfib, res_fiber_from_projection m X σ mfib ->
           exists n, mfib ⊨ ctx_denote_under Σ (cases n)) ->
       Γ ⊢ᶜ [Φ; Σ] e ⋮ τ
+
+  (** Adding a terminating branch preserves under coverage supplied by the
+      right branch.  Both premises are genuine syntax derivations. *)
+  | CT_ChooseUnder Γ left right b φ :
+      (Γ ⊢wf[Σ] choose_tm left right ⋮ CTUnder b φ) ->
+      (Γ ⊢ᶜ [Φ; Σ] left ⋮ CTOver b qual_top) ->
+      (Γ ⊢ᶜ [Φ; Σ] right ⋮ CTUnder b φ) ->
+      Γ ⊢ᶜ [Φ; Σ] choose_tm left right ⋮ CTUnder b φ
+
+  (** A deterministic root graph combines conditional pivot/left/right
+      coverage.  The certificate contains only pure qualifier conditions. *)
+  | CT_NodeUnderGraph Γ S xp xk xl xr φP φK φL φR Θ
+      (P : Store (V:=value) -> nat -> Prop)
+      (K : Store (V:=value) -> nat -> nat -> Prop)
+      (L : Store (V:=value) -> nat -> tree -> Prop)
+      (R : Store (V:=value) -> nat -> tree -> tree -> Prop)
+      (Q : Store (V:=value) -> tree -> Prop) :
+      (Γ ⊢wf[Σ] tnode (vfvar xk) (vfvar xl) (vfvar xr) ⋮ CTUnder TTree Θ) ->
+      node_under_graph_spec S xp xk xl xr φP φK φL φR Θ P K L R Q ->
+      (Γ ⊢ᶜ [Φ; Σ] tret (vfvar xp) ⋮ CTUnder TNat φP) ->
+      (Γ ⊢ᶜ [Φ; Σ] tret (vfvar xk) ⋮ CTOver TNat φK) ->
+      (Γ ⊢ᶜ [Φ; Σ] tret (vfvar xl) ⋮ CTUnder TTree φL) ->
+      (Γ ⊢ᶜ [Φ; Σ] tret (vfvar xr) ⋮ CTUnder TTree φR) ->
+      Γ ⊢ᶜ [Φ; Σ] tnode (vfvar xk) (vfvar xl) (vfvar xr) ⋮ CTUnder TTree Θ
 
 where "Γ ⊢ᶜ [ Φ ; Σ ] e ⋮ τ" := (has_context_type Φ Σ Γ e τ).
 

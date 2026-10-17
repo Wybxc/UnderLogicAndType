@@ -43,7 +43,9 @@ ContextLogic/theories/FormulaSyntax.v
 ContextLogic/theories/FormulaSemantics.v
 ContextLogic/theories/FormulaConnectives.v
 ContextLogic/theories/FormulaConnectivesHigher.v
+ContextLogic/theories/FormulaUnderAtom.v
 ContextLogic/theories/FormulaFiberwise.v
+ContextLogic/theories/FormulaUnderCoverage.v
 ContextLogic/theories/FormulaWorldExtension.v
 ContextLogic/theories/FormulaNotation.v
 
@@ -66,6 +68,7 @@ CoreLang/theories/OperationalResults.v
 CoreLang/theories/OperationalProps.v
 CoreLang/theories/StrongNormalization.v
 CoreLang/theories/Sugar.v
+CoreLang/theories/Choice.v
 
 ContextTypeLanguage/theories/Syntax.v
 ContextTypeLanguage/theories/SyntaxCore.v
@@ -78,6 +81,7 @@ ContextBasicDenotation/theories/Notation.v
 ContextBasicDenotation/theories/StoreTyping.v
 ContextBasicDenotation/theories/TermSyntax.v
 ContextBasicDenotation/theories/TermEval.v
+ContextBasicDenotation/theories/TreeCoverage.v
 ContextBasicDenotation/theories/TermOpen.v
 ContextBasicDenotation/theories/TermExtension.v
 ContextBasicDenotation/theories/TermTLet.v
@@ -114,6 +118,16 @@ Denotation/theories/Context.v
 Denotation/theories/ConstDenoteBase.v
 Denotation/theories/ConstDenote.v
 Denotation/theories/BaseIntro.v
+Denotation/theories/PersistElim.v
+Denotation/theories/PersistSubset.v
+Denotation/theories/ConditionalCoverage.v
+Denotation/theories/BaseCoverage.v
+Denotation/theories/ResultQualifier.v
+Denotation/theories/QualifierStore.v
+Denotation/theories/OverConsequence.v
+Denotation/theories/FixedParameters.v
+Denotation/theories/Choice.v
+Denotation/theories/TreeCoverage.v
 
 -R ContextTyping/theories ContextTyping
 
@@ -121,7 +135,11 @@ ContextTyping/theories/PrimOpContext.v
 ContextTyping/theories/PrimOpConcreteContext.v
 ContextTyping/theories/Typing.v
 ContextTyping/theories/TypingRegular.v
+ContextTyping/theories/Weakening.v
 ContextTyping/theories/Subtyping.v
+ContextTyping/theories/FixedParameters.v
+ContextTyping/theories/OverConsequence.v
+ContextTyping/theories/PersistElim.v
 ContextTyping/theories/SoundnessCaseTactics.v
 ContextTyping/theories/SoundnessLam.v
 ContextTyping/theories/SoundnessVar.v
@@ -133,8 +151,13 @@ ContextTyping/theories/SoundnessFixSelf.v
 ContextTyping/theories/SoundnessFix.v
 ContextTyping/theories/SoundnessArrowIntro.v
 ContextTyping/theories/SoundnessPersist.v
+ContextTyping/theories/SoundnessChoice.v
+ContextTyping/theories/SoundnessTree.v
 ContextTyping/theories/Soundness.v
 ContextTyping/theories/NatCases.v
+ContextTyping/theories/ConstCases.v
+ContextTyping/theories/BasicBindings.v
+ContextTyping/theories/FiberSupport.v
 ContextTyping/theories/Conversion.v
 
 -R CaseStudy/theories CaseStudy
@@ -146,11 +169,27 @@ CaseStudy/theories/Section3Logic.v
 CaseStudy/theories/Section4Extension.v
 CaseStudy/theories/MayMust.v
 CaseStudy/theories/BSTGenerator.v
+CaseStudy/theories/BSTSpecFacts.v
+CaseStudy/theories/BSTNodeTypes.v
+CaseStudy/theories/BSTContext.v
+CaseStudy/theories/BSTSupport.v
+CaseStudy/theories/BSTArithmeticSupport.v
+CaseStudy/theories/BSTRecursiveSupport.v
+CaseStudy/theories/BSTRecursiveCases.v
+CaseStudy/theories/BSTRightRecursiveCases.v
+CaseStudy/theories/BSTPositiveContext.v
+CaseStudy/theories/BSTRangeTyping.v
+CaseStudy/theories/BSTPositiveTyping.v
+CaseStudy/theories/BSTCallTyping.v
+CaseStudy/theories/BSTGeneratorContextTyping.v
 CaseStudy/theories/NatArithmetic.v
 CaseStudy/theories/ArithmeticProofTools.v
 CaseStudy/theories/NatArithmeticInstances.v
 CaseStudy/theories/NatArithmeticUnfolding.v
 CaseStudy/theories/NatArithmeticStages.v
 CaseStudy/theories/NatArithmeticTyping.v
+CaseStudy/theories/NatArithmeticApplications.v
 CaseStudy/theories/BSTGeneratorProgram.v
+CaseStudy/theories/BSTGeneratorUnfolding.v
+CaseStudy/theories/BSTGeneratorTyping.v
 CaseStudy/theories/DisproveMerge.v

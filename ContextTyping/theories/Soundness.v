@@ -26,7 +26,8 @@ From Denotation Require Import Context
 From ContextTyping Require Import PrimOpContext PrimOpConcreteContext Typing TypingRegular
   SoundnessCaseTactics
   SoundnessLam SoundnessVar
-  SoundnessApp SoundnessMatch SoundnessFix SoundnessPersist SoundnessArrowIntro.
+  SoundnessApp SoundnessMatch SoundnessFix SoundnessPersist SoundnessArrowIntro
+  SoundnessChoice SoundnessTree.
 
 Local Notation StoreT := (gmap atom value) (only parsing).
 Local Notation WorldT := (World (V := value)) (only parsing).
@@ -1068,6 +1069,8 @@ Proof.
   - eapply fundamental_conv_case; eauto.
   - eapply fundamental_value_arrow_case; eauto.
   - eapply fundamental_fiber_cases_case; eauto.
+  - eapply fundamental_choose_under_case; eauto using typing_wf_under.
+  - eapply fundamental_node_under_graph_case; eauto.
 Qed.
 
 (** ** Denotational soundness *)

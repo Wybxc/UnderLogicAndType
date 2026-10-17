@@ -5,8 +5,9 @@
     language. Arithmetic is implemented with recursive unary primitives;
     no binary primitives or context-typing rules are added here.
 
-    [bst_gen_type_judgement] states the desired context-typing proposition.
-    It is a definition, not a proof of a context-typing derivation. *)
+    [bst_gen_type_judgement] states the context-typing proposition.  Its
+    derivation is proved separately in [BSTGeneratorContextTyping], keeping
+    the program and specification independent of the proof modules. *)
 
 From CaseStudy Require Export BSTGenerator.
 From CaseStudy Require Import CaseTypes.
@@ -78,7 +79,7 @@ End BSTProgram.
 Definition bst_gen_value : value := BSTProgram.bst_gen.
 Definition bst_gen_program : tm := tret bst_gen_value.
 
-(** Target context-type judgment (proof deferred):
+(** Target context-type judgment:
 
       Emp |- ret bst_gen :
         Box (r : ONat -> lo : ONat -> range : range_ty ->
@@ -88,8 +89,8 @@ Definition bst_gen_program : tm := tret bst_gen_value.
     [BSTGenerator]. [concrete_Φ] supplies the five existing unary primitive
     signatures; both the ambient store environment and the term context
     are empty. This definition records a proposition without assuming its
-    derivability. A proof will need sound support for tree construction in
-    context typing. *)
+    derivability. [BSTGeneratorContextTyping.bst_gen_type_judgement_holds]
+    proves it using the original program, including both recursive calls. *)
 Definition bst_gen_type_judgement : Prop :=
   CtxEmpty ⊢ᶜ [concrete_Φ; ∅] bst_gen_program ⋮ bst_gen_ty.
 
