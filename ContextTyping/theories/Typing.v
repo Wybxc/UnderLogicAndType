@@ -10,6 +10,7 @@ From ContextAlgebra Require Import ResourceInterface.
 From ContextTypeLanguage Require Import WF.
 From ContextBasicDenotation Require Import BasicTypingFormula.
 From Denotation Require Import Context TypeDenote.
+From Denotation Require Import TypeEquivTermBase.
 From ContextTyping Require Import PrimOpContext.
 
 Local Notation WorldT := (World (V := value)) (only parsing).
@@ -99,6 +100,14 @@ Notation "'unreachable[' Σ ';' Γ ']' v '@' b" :=
 Reserved Notation "Γ '⊢ᶜ' '[' Φ ';' Σ ']' e '⋮' τ"
   (at level 40, Φ at level 200, Σ at level 200,
    e at level 200, τ at level 200).
+
+(** A finite logical cover of contexts.  Unlike [CtxSum], this does not
+    require every alternative to have a nonempty model simultaneously. *)
+Fixpoint ctx_cases_denote (Σ : gmap atom ty) (cases : list ctx) : FormulaT :=
+  match cases with
+  | nil => FFalse
+  | Γ :: rest => FOr (ctx_denote_under Σ Γ) (ctx_cases_denote Σ rest)
+  end.
 
 Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx -> tm -> context_ty -> Prop :=
 
@@ -245,6 +254,49 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx -> tm -> 
         precise_ty b (mk_q_eq (vbvar 0) (vfvar x))) ->
       Γ ⊢ᶜ [Φ; Σ] (ret (vfvar x))%core ⋮
         precise_ty b (mk_q_eq (vbvar 0) (vfvar x))
+
+  (** T-CtxCases.  Check the same term and result type under a finite
+      logical cover.  Each alternative has the same erased environment;
+      coverage is disjunction, rather than the resource sum [CtxSum]. *)
+  | CT_CtxCases Γ cases e τ :
+      (Γ ⊢wf[Σ] e ⋮ τ) ->
+      (forall Δ, In Δ cases -> erase_ctx Δ = erase_ctx Γ) ->
+      (forall Δ, In Δ cases -> Δ ⊢ᶜ [Φ; Σ] e ⋮ τ) ->
+      (ctx_denote_under Σ Γ ⊫ ctx_cases_denote Σ cases) ->
+      Γ ⊢ᶜ [Φ; Σ] e ⋮ τ
+
+  (** Conversion preserves both per-store results and must termination.
+      It transports an existing derivation; it cannot introduce a type
+      merely from an execution-correctness certificate. *)
+  | CT_Conv Γ e1 e2 τ :
+      (Γ ⊢wf[Σ] e2 ⋮ τ) ->
+      (Γ ⊢ᶜ [Φ; Σ] e1 ⋮ τ) ->
+      (forall m, m ⊨ ctx_denote_under Σ Γ ->
+        tm_equiv_on m e1 e2 /\ tm_total_equiv_on m e1 e2) ->
+      Γ ⊢ᶜ [Φ; Σ] e2 ⋮ τ
+
+  (** Value eta introduction: every application is checked by a genuine
+      derivation.  In particular this can check a closed fixed point by
+      induction on its natural input, without an unconstrained self world. *)
+  | CT_ArrowIntro Γ v b φ τ (L : aset) :
+      (Γ ⊢wf[Σ] (ret v)%core ⋮ (over_ty b φ → τ)%cty) ->
+      (forall x, x ∉ L ->
+        (Γ ,, (x ∷ over_ty b φ)) ⊢ᶜ [Φ; Σ]
+          (tapp_tm (tret v) (vfvar x)) ⋮ (cty_open 0 x τ)) ->
+      Γ ⊢ᶜ [Φ; Σ] (ret v)%core ⋮ (over_ty b φ → τ)%cty
+
+  (** Fiber classification.  Unlike finite logical context cases, this
+      splits a world into fibers.  The result must explicitly be joinable;
+      each fiber must satisfy one of the checked contexts. *)
+  | CT_FiberCases (I : Type) Γ (cases : I -> ctx) X e τ :
+      (Γ ⊢wf[Σ] e ⋮ τ) ->
+      (forall n, erase_ctx (cases n) = erase_ctx Γ) ->
+      (forall n, cases n ⊢ᶜ [Φ; Σ] e ⋮ τ) ->
+      fiberwise_joinable_on X (ty_denote_under Σ Γ τ e) ->
+      (forall m, m ⊨ ctx_denote_under Σ Γ ->
+        forall σ mfib, res_fiber_from_projection m X σ mfib ->
+          exists n, mfib ⊨ ctx_denote_under Σ (cases n)) ->
+      Γ ⊢ᶜ [Φ; Σ] e ⋮ τ
 
 where "Γ ⊢ᶜ [ Φ ; Σ ] e ⋮ τ" := (has_context_type Φ Σ Γ e τ).
 

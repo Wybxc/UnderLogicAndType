@@ -71,9 +71,56 @@ truncated at zero. The proofs follow the original small-step semantics and
 do not introduce primitive binary operations. `add_context_ty` and
 `sub_context_ty` specify persistent functions with precise results
 `ν = a + b` and `ν = a - b`; their well-formedness and erasures are proved.
-The corresponding `has_context_type` derivations for the two function values
-are still outstanding. Execution correctness alone is not asserted to be a
-context-typing derivation.
+`NatArithmeticTyping.add_value_context_typed` and
+`sub_value_context_typed` now prove the corresponding `has_context_type`
+judgments for both function values, including the outer persistence modality.
+They are polymorphic in the primitive-operation context `Φ`, since these
+library functions use no primitive-operation typing assumptions.
+
+The derivation has three checked parts:
+
+- `NatArithmeticInstances` derives each closed natural-input instance by
+  induction, starting from `CT_Const` and using certified deterministic
+  reductions. The smaller recursive call is typed by the induction hypothesis;
+  the existing execution-correctness theorems are not used as typing premises.
+- `NatArithmeticTyping.arithmetic_body_typing` classifies a world by the pair
+  of input values. `nat_graph_joinable` proves that the precise natural result
+  can be combined across these fibers, with all additional world variables
+  retained.
+- Lambda introduction and `CT_ArrowIntro` assemble the two arrows;
+  `CT_PersistIntro` establishes the original persistent function specification.
+
+The added general rules are `CT_Conv` (preserves both result sets and must
+termination), `CT_ArrowIntro` (a value's applications must have actual typing
+derivations), and `CT_FiberCases` (requires explicit fiber coverage and result
+joinability). Their soundness lemmas are connected to `Fundamental` in
+`ContextTyping.Soundness`; value-arrow soundness is proved in
+`SoundnessArrowIntro`. Existing denotation and `CT_Fix` are unchanged.
+No assumption of fiber stability for arbitrary arrows or persistent results
+is introduced.
+
+The declarative calculus now also has `CT_CtxCases`: a finite disjunctive
+cover of contexts, with a typing derivation under every alternative and an
+unchanged erased environment. Its soundness is proved by
+`fundamental_ctx_cases_case` and included in `Fundamental`.
+`ContextTyping.Subtyping` supplies reflexivity, transitivity, and intersection
+projections without adding primitive typing rules.
+
+The original `CT_Fix` has a mixed-world limitation.
+`fix_rec_arg_impossible_at_min_zero` proves that a parent world with minimum
+argument measure zero has no well-typed strictly smaller
+recursive argument in any extension. This includes mixed worlds containing
+both zero and positive inputs. Checking a recursive body after selecting its
+positive-input stores therefore requires more than the new context-cover
+rule: the recursive hypothesis must remain justified after that selection.
+The arithmetic derivations above avoid that premise by using syntactic
+induction on closed input instances and joining only precise base results.
+They do not establish a general BST recursion or tree-coverage theorem.
+
+The comparison with the paper's arrow and fixpoint definitions, including a
+mixed-world analysis of Example 3.3 and the distinction between checked lemmas
+and a mathematical countermodel, is recorded in
+[SemanticsAudit.md](SemanticsAudit.md).
 
 Build with the project's opam environment:
 

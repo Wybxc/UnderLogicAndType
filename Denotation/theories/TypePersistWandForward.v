@@ -32,6 +32,29 @@ Proof.
       eapply ty_denote_gas_over_ret_fvar_self_body; eauto.
 Qed.
 
+Lemma ty_denote_gas_over_ret_fvar_fiber_stable_any
+    gas (Σ : lty_env) b φ y X σ
+    (my mfib : WfWorldT) :
+  lty_env_closed Σ ->
+  y ∉ qual_dom φ ->
+  res_fiber_from_projection my X σ mfib ->
+  my ⊨ ty_denote_gas (S gas) Σ (CTOver b φ) (tret (vfvar y)) ->
+  mfib ⊨ ty_denote_gas (S gas) Σ (CTOver b φ) (tret (vfvar y)).
+Proof.
+  intros HΣclosed Hyφ Hproj Hden.
+  apply ty_denote_gas_over_ret_fvar_self_body_iff.
+  - exact HΣclosed.
+  - exact Hyφ.
+  - split.
+    + eapply ty_denote_gas_zero_res_subset.
+      * eapply res_subset_fiber_source; eauto.
+      * apply ty_denote_gas_zero_of_guard.
+        eapply ty_denote_gas_guard. exact Hden.
+    + unfold over_open_body.
+      eapply fiberwise_stable_on_fibvars_over_atom_any; eauto.
+      eapply ty_denote_gas_over_ret_fvar_self_body; eauto.
+Qed.
+
 Lemma wand_arg_fiber_models_persist_over_arg
     gas (Σ : lty_env) bx φx y σy
     (n nfib : WfWorldT) :

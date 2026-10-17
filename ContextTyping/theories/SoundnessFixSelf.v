@@ -372,6 +372,26 @@ Proof.
   lia.
 Qed.
 
+(** A strict recursive argument must exist for every store of the parent
+    world.  Consequently a world with minimum measure zero admits no such
+    argument, even if it also contains stores with positive measures. *)
+Corollary fix_rec_arg_impossible_at_min_zero
+    gas Σ b x z (parent mz : WfWorldT) :
+  z <> x ->
+  lty_env_closed Σ ->
+  0 < gas ->
+  parent ⊑ mz ->
+  world_arg_min_at b x parent 0 ->
+  ~ (mz ⊨ ty_denote_gas gas Σ
+    (over_ty b (mk_q_lt_base b (vbvar 0) (vfvar x)))
+    (tret (vfvar z))).
+Proof.
+  intros Hzx HΣ Hgas Hle Hmin Harg.
+  destruct (fix_rec_arg_decreases_min gas Σ b x z 0 parent mz
+    Hzx HΣ Hgas Hle Hmin Harg) as [μ [Hμ _]].
+  lia.
+Qed.
+
 Lemma fix_rec_child_ctx_from_arg
     Σ Γ φx τ b x z (parent mz : WfWorldT) :
   basic_ctx (dom Σ) Γ ->

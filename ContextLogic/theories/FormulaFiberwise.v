@@ -1398,11 +1398,10 @@ Proof.
   split; [apply HP|apply HQ].
 Qed.
 
-Lemma fiberwise_stable_on_fibvars_over_atom X D q :
-  formula_fv (FFibVars D (FOver (FAtom q))) ⊆ X ->
+Lemma fiberwise_stable_on_fibvars_over_atom_any X D q :
   fiberwise_stable_on X (FFibVars D (FOver (FAtom q))).
 Proof.
-  intros HfvX m σX mfibX HprojX Hmodel.
+  intros m σX mfibX HprojX Hmodel.
   apply res_models_FFibVars_iff in Hmodel as [Hscope [HlcD Hbody]].
   eapply res_models_FFibVars_intro.
   - unfold formula_scoped_in_world in *.
@@ -1457,5 +1456,10 @@ Proof.
     eapply subset_downward_closed_over; [exact Hsub|].
     unfold res_models. models_fuel_irrel Hover_big.
 Qed.
+
+Lemma fiberwise_stable_on_fibvars_over_atom X D q :
+  formula_fv (FFibVars D (FOver (FAtom q))) ⊆ X ->
+  fiberwise_stable_on X (FFibVars D (FOver (FAtom q))).
+Proof. intros _. apply fiberwise_stable_on_fibvars_over_atom_any. Qed.
 
 End FormulaFiberwise.

@@ -113,6 +113,7 @@ Denotation/theories/TypePersistWandReverse.v
 Denotation/theories/Context.v
 Denotation/theories/ConstDenoteBase.v
 Denotation/theories/ConstDenote.v
+Denotation/theories/BaseIntro.v
 
 -R ContextTyping/theories ContextTyping
 
@@ -120,6 +121,7 @@ ContextTyping/theories/PrimOpContext.v
 ContextTyping/theories/PrimOpConcreteContext.v
 ContextTyping/theories/Typing.v
 ContextTyping/theories/TypingRegular.v
+ContextTyping/theories/Subtyping.v
 ContextTyping/theories/SoundnessCaseTactics.v
 ContextTyping/theories/SoundnessLam.v
 ContextTyping/theories/SoundnessVar.v
@@ -129,8 +131,11 @@ ContextTyping/theories/SoundnessFixBase.v
 ContextTyping/theories/SoundnessFixApply.v
 ContextTyping/theories/SoundnessFixSelf.v
 ContextTyping/theories/SoundnessFix.v
+ContextTyping/theories/SoundnessArrowIntro.v
 ContextTyping/theories/SoundnessPersist.v
 ContextTyping/theories/Soundness.v
+ContextTyping/theories/NatCases.v
+ContextTyping/theories/Conversion.v
 
 -R CaseStudy/theories CaseStudy
 
@@ -142,5 +147,10 @@ CaseStudy/theories/Section4Extension.v
 CaseStudy/theories/MayMust.v
 CaseStudy/theories/BSTGenerator.v
 CaseStudy/theories/NatArithmetic.v
+CaseStudy/theories/ArithmeticProofTools.v
+CaseStudy/theories/NatArithmeticInstances.v
+CaseStudy/theories/NatArithmeticUnfolding.v
+CaseStudy/theories/NatArithmeticStages.v
+CaseStudy/theories/NatArithmeticTyping.v
 CaseStudy/theories/BSTGeneratorProgram.v
 CaseStudy/theories/DisproveMerge.v

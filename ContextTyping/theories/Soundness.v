@@ -17,6 +17,7 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
 From Denotation Require Import Context
   ResultFirstOpen
   TypeEquivCore
+  TypeEquivTermBase
   TypeEquivFiberBaseCore TypeEquivFiberBaseProjected
   TypeEquivTLet
   TypePersistArrow
@@ -25,7 +26,7 @@ From Denotation Require Import Context
 From ContextTyping Require Import PrimOpContext PrimOpConcreteContext Typing TypingRegular
   SoundnessCaseTactics
   SoundnessLam SoundnessVar
-  SoundnessApp SoundnessMatch SoundnessFix SoundnessPersist.
+  SoundnessApp SoundnessMatch SoundnessFix SoundnessPersist SoundnessArrowIntro.
 
 Local Notation StoreT := (gmap atom value) (only parsing).
 Local Notation WorldT := (World (V := value)) (only parsing).
@@ -972,6 +973,73 @@ Qed.
 
 (** ** Fundamental theorem *)
 
+Lemma fundamental_ctx_cases_case Σ Γ cases e τ :
+  (forall Δ, In Δ cases -> erase_ctx Δ = erase_ctx Γ) ->
+  (forall Δ, In Δ cases ->
+    ctx_denote_under Σ Δ ⊫ ty_denote_under Σ Δ τ e) ->
+  (ctx_denote_under Σ Γ ⊫ ctx_cases_denote Σ cases) ->
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e.
+Proof.
+  intros Herase IH Hcover m Hctx.
+  pose proof (Hcover m Hctx) as Hcases.
+  clear Hcover Hctx.
+  induction cases as [|Δ rest IHrest].
+  - cbn [ctx_cases_denote] in Hcases.
+    change (formula_scoped_in_world m FFalse /\ False) in Hcases.
+    tauto.
+  - cbn [ctx_cases_denote] in Hcases.
+    pose proof (res_models_scoped _ _ Hcases) as Hscope.
+    apply (proj1 (res_models_or_iff _ _ _ Hscope)) in Hcases.
+    destruct Hcases as [HΔ | Hrest].
+    + pose proof (IH Δ (or_introl eq_refl) m HΔ) as Hden.
+      unfold ty_denote_under in *.
+      rewrite (Herase Δ (or_introl eq_refl)) in Hden. exact Hden.
+    + apply IHrest; [| |exact Hrest].
+      * intros Δ' HΔ'. apply Herase. right. exact HΔ'.
+      * intros Δ' HΔ'. apply IH. right. exact HΔ'.
+Qed.
+
+Lemma fundamental_conv_case Σ Γ e1 e2 τ :
+  context_typing_wf Σ Γ e2 τ ->
+  (ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e1) ->
+  (forall m, m ⊨ ctx_denote_under Σ Γ ->
+    tm_equiv_on m e1 e2 /\ tm_total_equiv_on m e1 e2) ->
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e2.
+Proof.
+  intros Hwf IH Heq m Hctx.
+  pose proof (IH m Hctx) as Hsrc.
+  destruct (Heq m Hctx) as [Heval Htotal].
+  unfold ty_denote_under, ty_denote in *.
+  eapply ty_denote_gas_tm_equiv; [|exact Hsrc].
+  split; [exact Heval|]. split; [exact Htotal|].
+  assert (Hzero : m ⊨ ty_denote_gas 0
+      (atom_env_to_lty_env (erase_ctx Γ)) τ e1).
+  { apply ty_denote_gas_zero_of_guard. eapply ty_denote_gas_guard; exact Hsrc. }
+  split; [exact Hzero|].
+  eapply ty_denote_gas_zero_transport_static_tm_equiv; eauto.
+  - eapply context_typing_wf_denot_static_guard_full; eauto.
+  - eapply context_typing_wf_lc_tm; eauto.
+  - pose proof (soundness_wf_observed_vars_world_dom Σ Γ e2 τ m Hwf Hctx).
+    set_solver.
+Qed.
+
+Lemma fundamental_fiber_cases_case (I : Type) Σ Γ (cases : I -> ctx) X e τ :
+  (forall n, erase_ctx (cases n) = erase_ctx Γ) ->
+  (forall n, ctx_denote_under Σ (cases n) ⊫
+    ty_denote_under Σ (cases n) τ e) ->
+  fiberwise_joinable_on X (ty_denote_under Σ Γ τ e) ->
+  (forall m, m ⊨ ctx_denote_under Σ Γ ->
+    forall σ mfib, res_fiber_from_projection m X σ mfib ->
+      exists n, mfib ⊨ ctx_denote_under Σ (cases n)) ->
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e.
+Proof.
+  intros Herase IH Hjoin Hcover m Hctx.
+  apply Hjoin. intros σ mfib Hfib.
+  destruct (Hcover m Hctx σ mfib Hfib) as [n Hn].
+  pose proof (IH n mfib Hn) as Hden.
+  unfold ty_denote_under in *. rewrite Herase in Hden. exact Hden.
+Qed.
+
 Theorem Fundamental (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) :
   has_context_type Φ Σ Γ e τ ->
   ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e.
@@ -996,6 +1064,10 @@ Proof.
   - eapply fundamental_match_false_case; eauto.
   - eapply denot_var_right_in_ctx; eauto.
   - eapply denot_var_precise_in_ctx; eauto.
+  - eapply fundamental_ctx_cases_case; eauto.
+  - eapply fundamental_conv_case; eauto.
+  - eapply fundamental_value_arrow_case; eauto.
+  - eapply fundamental_fiber_cases_case; eauto.
 Qed.
 
 (** ** Denotational soundness *)
