@@ -7,6 +7,7 @@
     category so that all LN lemmas share a single notation. *)
 
 From CoreLang Require Export Prelude.
+From Stdlib Require Import ZArith.
 From ContextBase Require Import LogicVar BaseTactics.
 
 (** ** Base and basic types *)
@@ -16,7 +17,7 @@ Inductive tree : Type :=
   | tr_node (root : nat) (left right : tree).
 
 Inductive base_ty : Type :=
-  | TUnit | TBool | TNat | TTree | TList.
+  | TUnit | TBool | TNat | TTree | TList | TInt.
 
 Inductive ty : Type :=
   | TBase  (b : base_ty)
@@ -45,7 +46,8 @@ Inductive constant : Type :=
   | cbool (b : bool)
   | cnat  (n : nat)
   | ctree (t : tree)
-  | clist (xs : list nat).
+  | clist (xs : list nat)
+  | cint (z : Z).
 
 #[global] Instance constant_eqdec : EqDecision constant. Proof. solve_decision. Defined.
 
@@ -54,7 +56,9 @@ Inductive prim_op : Type :=
   | op_plus1     (** successor on natural numbers *)
   | op_minus1    (** predecessor on natural numbers, with [pred 0 = 0] *)
   | op_boolGen   (** nondeterministically generate a boolean; argument ignored *)
-  | op_natGen.   (** nondeterministically generate a natural; argument ignored *)
+  | op_natGen    (** nondeterministically generate a natural; argument ignored *)
+  | op_int_plus1 (** integer successor *)
+  | op_int_gt (bound : Z). (** integer comparison with a fixed bound *)
 
 #[global] Instance prim_op_eqdec : EqDecision prim_op. Proof. solve_decision. Defined.
 
@@ -65,6 +69,7 @@ Definition base_ty_of_const (c : constant) : base_ty :=
   | cnat _ => TNat
   | ctree _ => TTree
   | clist _ => TList
+  | cint _ => TInt
   end.
 
 (** ** Values and terms — mutual induction, locally nameless

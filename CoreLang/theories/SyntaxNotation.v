@@ -61,6 +61,7 @@ Definition constant_to_uint (c : constant) : option Number.uint :=
   | cbool _ => None
   | ctree _ => None
   | clist _ => None
+  | cint _ => None
   end.
 
 Number Notation constant constant_of_uint constant_to_uint : core_scope.

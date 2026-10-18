@@ -137,7 +137,7 @@ Lemma basic_typing_bool_canonical_form v :
 Proof.
   intros Hty.
   destruct (basic_typing_base_canonical_form v TBool Hty)
-    as [[|b|n|t|xs] [-> Hbase]]; simpl in Hbase; try discriminate.
+    as [[|b|n|t|xs|z] [-> Hbase]]; simpl in Hbase; try discriminate.
   destruct b; auto.
 Qed.
 
@@ -147,7 +147,16 @@ Lemma basic_typing_nat_canonical_form v :
 Proof.
   intros Hty.
   destruct (basic_typing_base_canonical_form v TNat Hty)
-    as [[|b|n|t|xs] [-> Hbase]]; simpl in Hbase; try discriminate; eauto.
+    as [[|b|n|t|xs|z] [-> Hbase]]; simpl in Hbase; try discriminate; eauto.
+Qed.
+
+Lemma basic_typing_int_canonical_form v :
+  ∅ ⊢ᵥ v ⋮ TBase TInt →
+  ∃ z, v = vconst (cint z).
+Proof.
+  intros Hty.
+  destruct (basic_typing_base_canonical_form v TInt Hty)
+    as [[|b|n|t|xs|z] [-> Hbase]]; simpl in Hbase; try discriminate; eauto.
 Qed.
 
 Lemma basic_typing_tree_canonical_form v :
@@ -156,7 +165,7 @@ Lemma basic_typing_tree_canonical_form v :
 Proof.
   intros Hty.
   destruct (basic_typing_base_canonical_form v TTree Hty)
-    as [[|b|n|t|xs] [-> Hbase]]; simpl in Hbase; try discriminate; eauto.
+    as [[|b|n|t|xs|z] [-> Hbase]]; simpl in Hbase; try discriminate; eauto.
 Qed.
 
 Lemma basic_typing_list_canonical_form v :
@@ -165,7 +174,7 @@ Lemma basic_typing_list_canonical_form v :
 Proof.
   intros Hty.
   destruct (basic_typing_base_canonical_form v TList Hty)
-    as [[|b|n|t|xs] [-> Hbase]]; simpl in Hbase; try discriminate; eauto.
+    as [[|b|n|t|xs|z] [-> Hbase]]; simpl in Hbase; try discriminate; eauto.
 Qed.
 
 Lemma basic_typing_unit_canonical_form v :
@@ -174,7 +183,7 @@ Lemma basic_typing_unit_canonical_form v :
 Proof.
   intros Hty.
   destruct (basic_typing_base_canonical_form v TUnit Hty)
-    as [[|b|n|t|xs] [-> Hbase]]; simpl in Hbase;
+    as [[|b|n|t|xs|z] [-> Hbase]]; simpl in Hbase;
     try discriminate; reflexivity.
 Qed.
 

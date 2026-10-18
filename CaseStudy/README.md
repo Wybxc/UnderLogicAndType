@@ -14,7 +14,10 @@ These modules extract specification definitions from
 | `Section2Typing` | Basic function types for the typing examples |
 | `Section3Logic` | The increment function's basic type |
 | `Section4Extension` | Boolean-to-natural and Boolean-to-Boolean function types |
-| `MayMust` | Figure 5.1 may/must summary types and their natural-number predicates |
+| `MayMust` | Historical Figure 5.1 natural-number specifications |
+| `MayMustRevised` | Revised Fig. 6 programs and specifications using native integers |
+| `MayMustTyping` | Complete context typing and Fundamental corollary for Fig. 6(b) |
+| `MayMustIndependentTyping` | Complete context typing and Fundamental corollary for Fig. 6(a), including the independent arrow |
 | `BSTGenerator` | BST/range predicates, qualifiers, and generator types |
 | `NatArithmetic` | Unary-core addition and truncated subtraction, exact execution and termination proofs, and precise context-type specifications |
 | `BSTGeneratorProgram` | Corrected Fig. 7 core program, target context-typing judgment, and checked basic typing |
@@ -60,9 +63,16 @@ before fiber classification of the base Under result; no arbitrary-arrow
 joinability is assumed. Administrative conversions preserve both results
 and must termination.
 
-Other example programs, context-typing derivations, semantic-subtyping proof
-obligations, and the binary-operation result qualifiers used by those
-obligations are omitted. The shared
+The revised Fig. 6 may/must examples are proved with an arbitrary free
+function `g`, native `TInt` constants, and integer successor/comparison
+primitives. `may_help_must_context_typed` and `must_help_may_context_typed`
+prove the exact paper specifications; their `context_sound` corollaries apply
+`concrete_Fundamental`. All support modules are registered in `_CoqProject`.
+These examples introduce no new typing rules or axioms. Their derivations,
+world-selection obligations, and five rounds of Gemini discussion are
+recorded in [MayMustFormalization.md](MayMustFormalization.md).
+
+The other introductory modules remain specification-only. The shared
 specification helpers come from the source branch's
 `ProofAutomation/theories/CaseTypes.v`; they import the existing syntax
 directly and do not depend on `ProofAutomation`.

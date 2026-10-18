@@ -408,37 +408,14 @@ Fixpoint list_measure (xs : list nat) : nat :=
   end.
 
 Definition constant_measure_for_base (b : base_ty) (c : constant) : nat :=
-  match b, c with
-  | TUnit, cunit => 0
-  | TUnit, cbool false => 0
-  | TUnit, cbool true => 1
-  | TUnit, cnat n => n
-  | TUnit, ctree t => tree_measure t
-  | TUnit, clist xs => list_measure xs
-  | TNat, cunit => 0
-  | TNat, cbool false => 0
-  | TNat, cbool true => 1
-  | TNat, cnat n => n
-  | TNat, ctree t => tree_measure t
-  | TNat, clist xs => list_measure xs
-  | TBool, cunit => 0
-  | TBool, cbool false => 0
-  | TBool, cbool true => 1
-  | TBool, cnat n => n
-  | TBool, ctree t => tree_measure t
-  | TBool, clist xs => list_measure xs
-  | TTree, cunit => 0
-  | TTree, cbool false => 0
-  | TTree, cbool true => 1
-  | TTree, cnat n => n
-  | TTree, ctree t => tree_measure t
-  | TTree, clist xs => list_measure xs
-  | TList, cunit => 0
-  | TList, cbool false => 0
-  | TList, cbool true => 1
-  | TList, cnat n => n
-  | TList, ctree t => tree_measure t
-  | TList, clist xs => list_measure xs
+  match c with
+  | cunit => 0
+  | cbool false => 0
+  | cbool true => 1
+  | cnat n => n
+  | ctree t => tree_measure t
+  | clist xs => list_measure xs
+  | cint z => Z.to_nat (Z.abs z)
   end.
 
 Definition constant_lt_for_base (b : base_ty) : constant -> constant -> Prop :=

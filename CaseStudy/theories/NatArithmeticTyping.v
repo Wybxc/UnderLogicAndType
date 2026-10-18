@@ -627,7 +627,7 @@ Proof.
   destruct (ty_denote_ret_fvar_base_const 1
     (atom_env_to_lty_env ({[x := TBase TNat]})) nat_over_ty TNat x m
     eq_refl Hden s Hs) as [c [Hx Hc]].
-  destruct c as [|b|n|tr|xs]; cbn [base_ty_of_const] in Hc; try discriminate.
+  destruct c as [|b|n|tr|xs|z]; cbn [base_ty_of_const] in Hc; try discriminate.
   exists n. exact Hx.
 Qed.
 

@@ -32,6 +32,10 @@ Definition primop_R (op : prim_op) (vx vy : value) : Prop :=
       exists b, vx = vconst cunit /\ vy = vconst (cbool b)
   | op_natGen =>
       exists n, vx = vconst cunit /\ vy = vconst (cnat n)
+  | op_int_plus1 =>
+      exists z, vx = vconst (cint z) /\ vy = vconst (cint (z + 1)%Z)
+  | op_int_gt k =>
+      exists z, vx = vconst (cint z) /\ vy = vconst (cbool (Z.gtb z k))
   end.
 
 Definition primop_graph_qual (op : prim_op) : type_qualifier :=
@@ -167,6 +171,10 @@ Definition concrete_primop_sig (op : prim_op) : primop_sig :=
       mk_primop_sig TUnit topq TBool (primop_graph_qual op_boolGen)
   | op_natGen =>
       mk_primop_sig TUnit topq TNat (primop_graph_qual op_natGen)
+  | op_int_plus1 =>
+      mk_primop_sig TInt topq TInt (primop_graph_qual op_int_plus1)
+  | op_int_gt k =>
+      mk_primop_sig TInt topq TBool (primop_graph_qual (op_int_gt k))
   end.
 
 Definition concrete_Φ : primop_ctx := concrete_primop_sig.
@@ -240,6 +248,8 @@ Lemma primop_result_ty_eq op :
   | op_minus1 => precise_ty TNat (primop_graph_qual op_minus1)
   | op_boolGen => precise_ty TBool (primop_graph_qual op_boolGen)
   | op_natGen => precise_ty TNat (primop_graph_qual op_natGen)
+  | op_int_plus1 => precise_ty TInt (primop_graph_qual op_int_plus1)
+  | op_int_gt k => precise_ty TBool (primop_graph_qual (op_int_gt k))
   end.
 Proof.
   unfold primop_result_ty, concrete_Φ, concrete_primop_sig.
@@ -340,6 +350,8 @@ Proof.
   - exists (cnat (Nat.pred n)). constructor.
   - exists (cbool true). constructor.
   - exists (cnat 0). constructor.
+  - exists (cint (z + 1)%Z). constructor.
+  - exists (cbool (Z.gtb z bound)). constructor.
 Qed.
 
 Lemma primop_arg_env_lookup op x :
@@ -389,15 +401,15 @@ Lemma primop_result_ty_open_eq op x :
       precise_ty TBool (qual_open_atom 1 x (primop_graph_qual op_boolGen))
   | op_natGen =>
       precise_ty TNat (qual_open_atom 1 x (primop_graph_qual op_natGen))
+  | op_int_plus1 =>
+      precise_ty TInt (qual_open_atom 1 x (primop_graph_qual op_int_plus1))
+  | op_int_gt k =>
+      precise_ty TBool (qual_open_atom 1 x (primop_graph_qual (op_int_gt k)))
   end.
 Proof.
   rewrite primop_result_ty_eq.
   destruct op; unfold precise_ty, over_ty, under_ty, topq; cbn [cty_open].
-  - reflexivity.
-  - reflexivity.
-  - reflexivity.
-  - reflexivity.
-  - reflexivity.
+  all: reflexivity.
 Qed.
 
 Lemma primop_arg_guard_formula
@@ -1229,6 +1241,10 @@ Proof.
         precise_ty TBool (qual_open_atom 1 x (primop_graph_qual op_boolGen))
     | op_natGen =>
         precise_ty TNat (qual_open_atom 1 x (primop_graph_qual op_natGen))
+    | op_int_plus1 =>
+        precise_ty TInt (qual_open_atom 1 x (primop_graph_qual op_int_plus1))
+    | op_int_gt k =>
+        precise_ty TBool (qual_open_atom 1 x (primop_graph_qual (op_int_gt k)))
     end).
   set (Σres := relevant_env
     (atom_env_to_lty_env (erase_ctx (CtxBind x (primop_arg_ty (concrete_Φ op)))))
@@ -1320,26 +1336,10 @@ Proof.
   pose proof (primop_opened_result_guard_formula op x m Hctx) as Hguard.
   rewrite primop_result_ty_open_eq in Hguard.
   destruct op; cbn [cty_depth].
-	  - rewrite primop_graph_qual_open_arg in Hguard |- *.
-	    apply ty_denote_gas_precise_self_result_qual.
-	    apply typed_result_qual_prim_fvar_eq.
-	    apply ty_denote_gas_zero_of_guard_formula. exact Hguard.
-	  - rewrite primop_graph_qual_open_arg in Hguard |- *.
-	    apply ty_denote_gas_precise_self_result_qual.
-	    apply typed_result_qual_prim_fvar_eq.
-	    apply ty_denote_gas_zero_of_guard_formula. exact Hguard.
-	  - rewrite primop_graph_qual_open_arg in Hguard |- *.
-	    apply ty_denote_gas_precise_self_result_qual.
-	    apply typed_result_qual_prim_fvar_eq.
-	    apply ty_denote_gas_zero_of_guard_formula. exact Hguard.
-	  - rewrite primop_graph_qual_open_arg in Hguard |- *.
-	    apply ty_denote_gas_precise_self_result_qual.
-	    apply typed_result_qual_prim_fvar_eq.
-	    apply ty_denote_gas_zero_of_guard_formula. exact Hguard.
-	  - rewrite primop_graph_qual_open_arg in Hguard |- *.
-	    apply ty_denote_gas_precise_self_result_qual.
-	    apply typed_result_qual_prim_fvar_eq.
-	    apply ty_denote_gas_zero_of_guard_formula. exact Hguard.
+  all: rewrite primop_graph_qual_open_arg in Hguard |- *.
+  all: apply ty_denote_gas_precise_self_result_qual;
+    [apply typed_result_qual_prim_fvar_eq|
+      apply ty_denote_gas_zero_of_guard_formula; exact Hguard].
 Qed.
 
 Lemma primop_result_denotation_arg_world

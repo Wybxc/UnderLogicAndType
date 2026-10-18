@@ -21,6 +21,8 @@ Definition prim_op_type (op : prim_op) : base_ty * base_ty :=
   | op_minus1 => (TNat, TNat)
   | op_boolGen => (TUnit, TBool)
   | op_natGen => (TUnit, TNat)
+  | op_int_plus1 => (TInt, TInt)
+  | op_int_gt _ => (TInt, TBool)
   end.
 
 (** ** Typing judgments *)

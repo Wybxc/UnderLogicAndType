@@ -168,6 +168,16 @@ CaseStudy/theories/Section2Typing.v
 CaseStudy/theories/Section3Logic.v
 CaseStudy/theories/Section4Extension.v
 CaseStudy/theories/MayMust.v
+CaseStudy/theories/MayMustWorlds.v
+CaseStudy/theories/MayMustRevised.v
+CaseStudy/theories/MayMustBase.v
+CaseStudy/theories/MayMustPrimitives.v
+CaseStudy/theories/MayMustBoolCases.v
+CaseStudy/theories/MayMustTyping.v
+CaseStudy/theories/MayMustUnder.v
+CaseStudy/theories/MayMustAbsorption.v
+CaseStudy/theories/MayMustIndependentCases.v
+CaseStudy/theories/MayMustIndependentTyping.v
 CaseStudy/theories/BSTGenerator.v
 CaseStudy/theories/BSTSpecFacts.v
 CaseStudy/theories/BSTNodeTypes.v
