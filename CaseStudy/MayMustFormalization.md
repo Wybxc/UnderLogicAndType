@@ -10,6 +10,9 @@ $\oplus$ 的两部分均须非空。
 
 ## 例 (a)：May-analysis helps must-analysis
 
+当前采用用户要求的变体：将论文的 $y>10$ 改为 $y\ge10$，类型保持不变。
+实现使用整数上等价的 `op_int_gt 9`；`may_help_must_ge10_test` 证明比较条件等价。
+
 $$
 G_a=\{\nu:\mathrm{int}\mid\top\}\to
     \{\nu:\mathrm{int}\mid\nu\ne0\},
@@ -17,7 +20,7 @@ $$
 
 $$
 f_a=\lambda x.\lambda y.
-\mathbf{if}\ y>10\ \mathbf{then}\ (g\,x)+1\ \mathbf{else}\ x+1.
+\mathbf{if}\ y\ge10\ \mathbf{then}\ (g\,x)+1\ \mathbf{else}\ x+1.
 $$
 
 已证明：
@@ -34,7 +37,7 @@ $$
 
 令 $C=(g:G_a,x:[\nu=0])$，$Y=y:[0\le\nu\le10]$。
 `CT_Lam`、`CT_LamD` 引入参数后得到 $C*Y$。先用 `CT_Let` 和
-`CT_AppOp` 绑定比较结果 $b=(y>10)$，再分类整个能力：
+`CT_AppOp` 绑定比较结果 $b=(y\ge10)$，再分类整个能力：
 
 $$
 \Gamma_F=(C,y:\{\top\}),b:\mathsf{precise}(\mathsf{false}),\qquad
@@ -42,14 +45,16 @@ $$
 $$
 
 $$
-(C*Y),b:\mathsf{graph}(y>10)
+(C*Y),b:\mathsf{graph}(y\ge10)
 \models \llbracket\Gamma_F\rrbracket\lor
          \llbracket\Gamma_T\oplus\Gamma_F\rrbracket.
 $$
 
 所有简写基础类型均为 $\mathrm{int}$，布尔绑定除外。
 
-- $Y$ 覆盖 $y=0$，所以 false 部分必非空。true 部分可为空；
+- $Y$ 覆盖 $y=0$，所以 false 部分必非空。$y=10$ 改走 true 分支，
+  但不影响 false 分支中的 $x=0,y=0$ 见证；true 部分现在也由 $y=10$ 保证非空。
+  原证明仍允许 true 部分为空，使用较弱前提即可完成推导；
   `CT_CtxCases` 区分这两种整世界情况。
 - 若 $(c\times d)\sqsubseteq m$，按仅依赖 $y$ 的谓词筛选非空分支，
   有 $c\sqsubseteq m_T$、$c\sqsubseteq m_F$。

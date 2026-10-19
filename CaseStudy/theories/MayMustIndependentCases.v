@@ -9,7 +9,7 @@ From ContextLogic Require Import FormulaConnectives.
 From Stdlib Require Import ZArith Lia Classical_Prop.
 
 Definition mm_cut y (s : StoreT) : Prop :=
-  exists z, s !! y = Some (vint z) /\ (10 < z)%Z.
+  exists z, s !! y = Some (vint z) /\ (9 < z)%Z.
 
 Lemma mm_cut_restrict y s X : y ∈ X ->
   mm_cut y s <-> mm_cut y (store_restrict s X).
@@ -151,7 +151,7 @@ Definition mm_a_ctx g x := CtxComma (CtxBind g may_help_must_g_ty)
 Definition mm_a_inputs g x y := CtxStar (mm_a_ctx g x)
   (CtxBind y (UInt (fun z => (0<=z<=10)%Z))).
 Definition mm_a_compare_ctx g x y b := CtxComma (mm_a_inputs g x y)
-  (CtxBind b (mm_gt_ty 10 y)).
+  (CtxBind b (mm_gt_ty 9 y)).
 Definition mm_a_branch_ctx g x y b flag :=
   CtxComma (CtxComma (mm_a_ctx g x) (CtxBind y (CTOver TInt qual_top)))
     (CtxBind b (bool_precise_ty flag)).
@@ -208,7 +208,7 @@ Proof.
   intros Hgx Hy Hb. apply mm_wf_comma_bind.
   - apply mm_a_inputs_wf; assumption.
   - cbn [mm_a_inputs mm_a_ctx ctx_dom]. clear -Hb. set_solver.
-  - exact (proj1 (mm_prim_graph_wf (mm_a_inputs g x y) (op_int_gt 10) y TInt TBool
+  - exact (proj1 (mm_prim_graph_wf (mm_a_inputs g x y) (op_int_gt 9) y TInt TBool
       eq_refl (mm_a_input_y g x y Hgx Hy))).
 Qed.
 
@@ -286,7 +286,7 @@ Proof.
     pose proof (eq_trans (eq_sym Hy0) Hz) as Heq. unfold vint in Heq. injection Heq as <-. lia. }
   assert (Hgraph : forall s, (m : WorldT) s ->
     qualifier_holds_store (qual_open_atom 0 b (typed_result_qual TBool
-      (expr_result_qual (tprim (op_int_gt 10) (vfvar y)) (LVBound 0)))) s).
+      (expr_result_qual (tprim (op_int_gt 9) (vfvar y)) (LVBound 0)))) s).
   { apply (mm_comma_over_store ∅ (mm_a_inputs g x y) b TBool _ m); [|exact Hctx].
     unfold qual_dom,expr_result_qual.
     cbn [qual_vars qual_lvars tm_lvars tm_lvars_at value_lvars_at bvar_lvars_at].
@@ -299,13 +299,13 @@ Proof.
       (erase_ctx_comma_lookup_old _ _ _ _ _ (mm_a_input_y g x y Hgx Hy)) Hctx Hs)
       as [v [Hvy Hty]].
     destruct (basic_typing_int_canonical_form v Hty) as [z ->].
-    pose proof (mm_gt_graph_lookup 10 y b s z ltac:(clear -Hb; set_solver) Hvy (Hgraph s Hs)) as Hvb.
+    pose proof (mm_gt_graph_lookup 9 y b s z ltac:(clear -Hb; set_solver) Hvy (Hgraph s Hs)) as Hvb.
     split.
     - intros [z' [Hz Hgt]].
       pose proof (eq_trans (eq_sym Hvy) Hz) as Heq. injection Heq as <-.
       rewrite (proj2 (Z.gtb_lt _ _) Hgt) in Hvb. exact Hvb.
-    - intros Hnot. assert (Hgt : Z.gtb z 10=false).
-      { destruct (Z.gtb z 10) eqn:Hz; [|reflexivity]. exfalso. apply Hnot.
+    - intros Hnot. assert (Hgt : Z.gtb z 9=false).
+      { destruct (Z.gtb z 9) eqn:Hz; [|reflexivity]. exfalso. apply Hnot.
         exists z. split; [exact Hvy|apply Z.gtb_lt; exact Hz]. }
       rewrite Hgt in Hvb. exact Hvb. }
   assert (HFscope := mm_a_branch_scope g x y b false m Hgx Hy Hb Hctx).

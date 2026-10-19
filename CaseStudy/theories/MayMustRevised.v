@@ -4,7 +4,7 @@ From CaseStudy Require Import CaseTypes.
 From CoreLang Require Import Sugar BasicTypingProps.
 From Denotation Require Import ResultQualifier.
 From ContextTypeLanguage Require Import WF.
-From Stdlib Require Import ZArith.
+From Stdlib Require Import ZArith Lia.
 
 Definition vint (z : Z) : value := vconst (cint z).
 Definition int_pred (P : Z -> Prop) : type_qualifier :=
@@ -24,10 +24,14 @@ Definition must_help_may_ty : context_ty :=
   CTArrow (UInt (fun _ => True))
     (CTSum (OInt (fun z => z = 2%Z)) (OInt (fun z => z = 5%Z))).
 
-(** λx. λy. if y > 10 then (g x) + 1 else x + 1. *)
+(** User-requested variant of Figure 6(a): y >= 10.
+    On integers this is y > 9, using the existing strict comparison primitive. *)
+Lemma may_help_must_ge10_test z :
+  Z.gtb z 9 = true <-> (10 <= z)%Z.
+Proof. rewrite Z.gtb_lt. lia. Qed.
 Definition may_help_must (g : atom) : value :=
   vlam TInt (tret (vlam TInt
-    (tlete (tprim (op_int_gt 10) (vbvar 0))
+    (tlete (tprim (op_int_gt 9) (vbvar 0))
       (tmatch (vbvar 0)
         (tlete (tapp (vfvar g) (vbvar 2))
           (tprim op_int_plus1 (vbvar 0)))
@@ -83,7 +87,7 @@ Proof.
   apply VT_Lam with (L:={[g]}). intros x Hx. apply not_elem_of_singleton in Hx.
   change (tm_has_type (<[x:=TBase TInt]> Δ)
     (tret (vlam TInt
-      (tlete (tprim (op_int_gt 10) (vbvar 0))
+      (tlete (tprim (op_int_gt 9) (vbvar 0))
         (tmatch (vbvar 0)
           (tlete (tapp (vfvar g) (vfvar x)) (tprim op_int_plus1 (vbvar 0)))
           (tprim op_int_plus1 (vfvar x)))))) (TArrow TInt TInt)).
@@ -91,7 +95,7 @@ Proof.
   apply not_elem_of_union in Hy as [Hyg Hyx].
   apply not_elem_of_singleton in Hyg, Hyx.
   change (tm_has_type (<[y:=TBase TInt]>(<[x:=TBase TInt]>Δ))
-    (tlete (tprim (op_int_gt 10) (vfvar y))
+    (tlete (tprim (op_int_gt 9) (vfvar y))
       (tmatch (vbvar 0)
         (tlete (tapp (vfvar g) (vfvar x)) (tprim op_int_plus1 (vbvar 0)))
         (tprim op_int_plus1 (vfvar x)))) (TBase TInt)).

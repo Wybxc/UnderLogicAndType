@@ -1,4 +1,4 @@
-(** Complete declarative derivation of revised Figure 6(a). *)
+(** Complete declarative derivation of Figure 6(a), with y >= 10. *)
 From CaseStudy Require Import MayMustRevised MayMustBase MayMustPrimitives MayMustBoolCases
   MayMustTyping MayMustUnder MayMustAbsorption MayMustIndependentCases.
 From ContextTyping Require Import Typing TypingRegular Subtyping BasicBindings SoundnessLam
@@ -95,7 +95,7 @@ Definition mm_a_then g x :=
 Definition mm_a_match g x b :=
   tmatch (vfvar b) (mm_a_then g x) (tprim op_int_plus1 (vfvar x)).
 Definition mm_a_body g x y :=
-  tlete (tprim (op_int_gt 10) (vfvar y))
+  tlete (tprim (op_int_gt 9) (vfvar y))
     (tmatch (vbvar 0) (mm_a_then g x) (tprim op_int_plus1 (vfvar x))).
 
 Lemma mm_a_then_basic Δ g x :
@@ -226,9 +226,9 @@ Lemma mm_a_body_typed g x y : g<>x -> y ∉ ({[g;x]} : aset) ->
 Proof.
   intros Hgx Hy. pose proof (mm_a_inputs_wf g x y Hgx Hy) as HΓ.
   destruct (mm_a_input_lookups g x y Hgx Hy) as [Hg [Hx Hyl]].
-  apply CT_Let with (τ1:=mm_gt_ty 10 y) (L:={[g;x;y]}).
+  apply CT_Let with (τ1:=mm_gt_ty 9 y) (L:={[g;x;y]}).
   - split; [exact HΓ|]. split; [apply int_pred_wf|apply mm_a_body_basic; assumption].
-  - exact (mm_prim_over_typed _ (op_int_gt 10) y TInt TBool eq_refl HΓ Hyl).
+  - exact (mm_prim_over_typed _ (op_int_gt 9) y TInt TBool eq_refl HΓ Hyl).
   - intros b Hb. change (has_context_type concrete_Φ ∅ (mm_a_compare_ctx g x y b)
       (mm_a_match g x b) (UInt (fun z => z=1%Z))).
     pose proof (mm_a_compare_wf g x y b Hgx Hy Hb) as Hnew.
@@ -247,7 +247,7 @@ Proof.
 Qed.
 
 Definition mm_a_inner g x : value := vlam TInt
-  (tlete (tprim (op_int_gt 10) (vbvar 0))
+  (tlete (tprim (op_int_gt 9) (vbvar 0))
     (tmatch (vbvar 0) (mm_a_then g x) (tprim op_int_plus1 (vfvar x)))).
 
 Lemma mm_a_inner_basic Δ g x :
