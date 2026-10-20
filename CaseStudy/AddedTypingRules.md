@@ -1,6 +1,6 @@
-# BST 与算术证明新增的类型规则
+# 案例证明新增的类型规则
 
-共新增 **8 条 context typing 原始规则**：变量支持 2 条、算术准备 4 条、BST 组合 2 条。下式按案例中的空外部环境书写，省略固定原语环境。
+共新增 **9 条 context typing 原始规则**：变量支持 2 条、算术准备 4 条、BST 组合 2 条、独立箭头引入 1 条。下式按案例中的空外部环境书写，省略固定原语环境。
 
 记号沿用论文 Fig. 2、Fig. 4、§4.1–4.4 和 Fig. 7：
 
@@ -85,7 +85,21 @@ $$
 
 $\tau$ 中的 $x$ 由箭头绑定，对应代码的 `cty_open 0 x τ`；前提按任意新鲜 $x$ 检查。
 
-### 6. [CT_FiberCases](../ContextTyping/theories/Typing.v#L291)：纤维分类
+### 6. [CT_WandIntro](../ContextTyping/theories/Typing.v#L291)：从应用引入值的独立箭头
+
+$$
+\frac{
+  \Gamma*x:\tau_x\vdash v\,x:\tau
+}{\Gamma\vdash v:x:\tau_x\mathbin{-\!*}\tau}
+\qquad(x\text{ fresh})
+$$
+
+$v$ 为值，$\varnothing\vdash^{\mathrm{WF}}\tau_x$；结果 $\tau$ 可依赖 $x$。
+应用前提必须有实际 typing 推导。soundness 由
+[fundamental_value_wand_case](../ContextTyping/theories/SoundnessWandIntro.v)
+证明并接入 `Fundamental`；原始 merge worker 使用此规则，无需 η 包装。
+
+### 7. [CT_FiberCases](../ContextTyping/theories/Typing.v#L301)：纤维分类
 
 使用论文 Definition 4.2 的 $\operatorname{Fib}$，推广到变量集合上的投影环境：
 
@@ -123,7 +137,7 @@ $$
 
 $I$ 可以无限。最后一项必须单独证明；此处保留完整纤维公式，论文的 $X\mathbin{\triangleright}P$ 还包含对 $P$ 的赋值代换。
 
-### 7. [CT_ChooseUnder](../ContextTyping/theories/Typing.v#L303)：选择的覆盖
+### 8. [CT_ChooseUnder](../ContextTyping/theories/Typing.v#L313)：选择的覆盖
 
 $$
 \frac{
@@ -135,7 +149,7 @@ $$
 
 项中的 $\oplus$ 沿用论文 Fig. 7 的非确定选择记号，对应 `choose_tm`。右分支提供覆盖，两分支均须终止。
 
-### 8. [CT_NodeUnderGraph](../ContextTyping/theories/Typing.v#L311)：条件节点覆盖
+### 9. [CT_NodeUnderGraph](../ContextTyping/theories/Typing.v#L321)：条件节点覆盖
 
 $$
 \frac{

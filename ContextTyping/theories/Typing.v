@@ -285,6 +285,16 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx -> tm -> 
           (tapp_tm (tret v) (vfvar x)) ⋮ (cty_open 0 x τ)) ->
       Γ ⊢ᶜ [Φ; Σ] (ret v)%core ⋮ (over_ty b φ → τ)%cty
 
+  (** Value introduction for the independent arrow. Every application is
+      checked under a multiplicatively extended context. The ordinary
+      well-formedness premise retains the closed-domain requirement of wand. *)
+  | CT_WandIntro Γ v τx τ (L : aset) :
+      (Γ ⊢wf[Σ] (ret v)%core ⋮ (τx -∗ τ)%cty) ->
+      (forall x, x ∉ L ->
+        (Γ ∗ (x ∷ τx)) ⊢ᶜ [Φ; Σ]
+          (tapp_tm (tret v) (vfvar x)) ⋮ (cty_open 0 x τ)) ->
+      Γ ⊢ᶜ [Φ; Σ] (ret v)%core ⋮ (τx -∗ τ)%cty
+
   (** Fiber classification.  Unlike finite logical context cases, this
       splits a world into fibers.  The result must explicitly be joinable;
       each fiber must satisfy one of the checked contexts. *)

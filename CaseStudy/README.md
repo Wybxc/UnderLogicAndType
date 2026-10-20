@@ -1,170 +1,149 @@
-# Case-study specifications
+# Verified case studies
 
-新增类型规则（含算术准备工作）的 LaTeX 公式汇总见
-[AddedTypingRules.md](AddedTypingRules.md)。
+This directory contains context-typing proofs for three case studies. Each
+entry below has a derivation of `has_context_type` and a denotational-soundness
+corollary obtained from `concrete_Fundamental`.
 
-These modules extract specification definitions from
-`codex/core-tree-extension` at commit
-`cd3eace61c92d8a2d3eb708b5c22c4d3127cc91f`.
+## Directory
 
-| Module | Definitions |
-| --- | --- |
-| `CaseTypes` | Shared type aliases, notation, and semantic qualifier constructors |
-| `Section1Intro` | Basic function types for the introduction examples |
-| `Section2Typing` | Basic function types for the typing examples |
-| `Section3Logic` | The increment function's basic type |
-| `Section4Extension` | Boolean-to-natural and Boolean-to-Boolean function types |
-| `MayMust` | Historical Figure 5.1 natural-number specifications |
-| `MayMustRevised` | Revised Fig. 6 programs and specifications using native integers |
-| `MayMustTyping` | Complete context typing and Fundamental corollary for Fig. 6(b) |
-| `MayMustIndependentTyping` | Complete context typing and Fundamental corollary for Fig. 6(a), including the independent arrow |
-| `BSTGenerator` | BST/range predicates, qualifiers, and generator types |
-| `NatArithmetic` | Unary-core addition and truncated subtraction, exact execution and termination proofs, and precise context-type specifications |
-| `BSTGeneratorProgram` | Corrected Fig. 7 core program, target context-typing judgment, and checked basic typing |
-| `BSTPositiveTyping` | Context typing of the original six lets, choice, and fixed-parameter result conversion |
-| `BSTCallTyping` | Genuine context typing of the original generator calls by strong induction on size |
-| `BSTGeneratorContextTyping` | Complete persistent generator typing and its Fundamental soundness corollary |
-| `DisproveMerge` | List membership/sortedness predicates and merge safety/disproof types |
+| Case study | Program and specification | Main proof entry |
+| --- | --- | --- |
+| [May/must analysis](#maymust-analysis-figure-6) — revised Fig. 6(a–b) | [MayMustRevised.v](theories/MayMustRevised.v) | [MayMustIndependentTyping.v](theories/MayMustIndependentTyping.v) (a), [MayMustTyping.v](theories/MayMustTyping.v) (b) |
+| [BST generator](#bst-generator-figure-7) — corrected Fig. 7 | [BSTGeneratorProgram.v](theories/BSTGeneratorProgram.v), [BSTGenerator.v](theories/BSTGenerator.v) | [BSTGeneratorContextTyping.v](theories/BSTGeneratorContextTyping.v) |
+| [Incorrectness reasoning](#incorrectness-reasoning-figure-8) — revised Fig. 8, pp. 24–25 | [MergeProgram.v](theories/MergeProgram.v), [MergeIncorrectness.v](theories/MergeIncorrectness.v) | [MergeWorkerTyping.v](theories/MergeWorkerTyping.v) |
 
-The imported definitions retain their original names and bodies, except for
-`BSTGenerator`: its specification now describes a persistent function taking
-`r`, `lo`, and a persistent range function. The corrected range contract has
-an over-approximate domain `x <= y` and a precise result
-`{ν : nat | x <= ν <= y} ⊓ [ν : nat | x <= ν <= y]`. Thus `range 1 r`
-is valid when `r = 1`, every result stays within the closed interval, and
-every point in that interval is reachable.
-The generator has an under-approximate tree result satisfying the BST
-predicate and `tree_mem n t <-> lo < n <= lo + r`. Its result qualifier uses
-`arg2` for `r` and `arg1` for `lo`; the nearest argument is the range function.
-The BST predicate excludes duplicate keys in both subtrees.
+## Checking the proofs
 
-`BSTGeneratorProgram` encodes the corrected generator using the existing
-locally nameless core syntax. It imports the addition and truncated-subtraction
-library from `NatArithmetic`; `boolGen` implements
-nondeterministic choice. Its exported `bst_gen_program` is closed and has
-the basic type obtained by erasing `bst_gen_ty`; these properties are proved.
-The specification's well-formedness is also proved.
+First install the locked dependencies using the repository's
+[environment setup instructions](../README.md#compilation-and-dependencies).
+Run all commands below **from the repository root**.
 
-`bst_gen_type_judgement` defines the target proposition
-`has_context_type concrete_Φ ∅ CtxEmpty bst_gen_program bst_gen_ty`.
-`BSTGeneratorContextTyping.bst_gen_type_judgement_holds` now proves this exact
-proposition, including the outer persistence modality. Its companion
-`bst_gen_denotational_sound` applies `concrete_Fundamental` to the derivation.
-The original generator, specification, denotation, and `CT_Fix` are retained.
+Generate the Makefile, then compile the four proof entries covering all three
+case studies. Their dependencies are built automatically.
 
-The proof first establishes `bst_call_minimal_context_typed` for all sizes,
-lower bounds, and fresh argument names by strong induction. The positive
-step combines the original range/arithmetic operations, both smaller calls,
-and conditional node coverage through the six original lets. Right-subtree
-coverage retains the left-tree variable in its support. `CT_ChooseUnder`
-admits the extra terminating `Leaf` branch without requiring it to satisfy
-the positive-size BST predicate. At the top level, parameters are introduced
-before fiber classification of the base Under result; no arbitrary-arrow
-joinability is assumed. Administrative conversions preserve both results
-and must termination.
-
-The revised Fig. 6 may/must examples are proved with an arbitrary free
-function `g`, native `TInt` constants, and integer successor/comparison
-primitives. `may_help_must_context_typed` and `must_help_may_context_typed`
-prove the exact paper specifications; their `context_sound` corollaries apply
-`concrete_Fundamental`. All support modules are registered in `_CoqProject`.
-These examples introduce no new typing rules or axioms. Their derivations,
-world-selection obligations, and five rounds of Gemini discussion are
-recorded in [MayMustFormalization.md](MayMustFormalization.md).
-
-The other introductory modules remain specification-only. The shared
-specification helpers come from the source branch's
-`ProofAutomation/theories/CaseTypes.v`; they import the existing syntax
-directly and do not depend on `ProofAutomation`.
-
-Tree/List support is integrated into the STLC core using the source branch's
-Tree/List changes through commit `bfea370efa04c54af1b22e84863c99415a2a1109`.
-The extension includes constants, construction and matching terms, basic
-typing, operational semantics, locally nameless operations, and the proofs
-needed to keep the existing metatheory checked. The current `Unit` support
-is retained. The corresponding logical-variable basic-typing judgments and
-denotation support are updated to cover these STLC terms.
-
-`ContextTyping/theories/Typing.v` now additionally supports dependent lookup of
-the final additive binding (`CT_VarR`) and exact base-variable returns
-(`CT_VarSelf`). Both rules are proved sound in `SoundnessVar` and included in
-`Fundamental`. Reading earlier bindings is derived using the existing
-`CT_CtxSub` rule (`typing_weaken_comma`); it is not a new primitive rule.
-The source branch's `ExtendedTyping`, `ExtendedSubsumption`, inference
-automation, and binary-operation language extension are not imported.
-
-`NatArithmetic.add_value_run` and `sub_value_run` prove deterministic execution
-for all natural inputs. Their corollaries prove both must termination and the
-exact result sets: respectively `{n + m}` and `{n - m}`, where subtraction is
-truncated at zero. The proofs follow the original small-step semantics and
-do not introduce primitive binary operations. `add_context_ty` and
-`sub_context_ty` specify persistent functions with precise results
-`ν = a + b` and `ν = a - b`; their well-formedness and erasures are proved.
-`NatArithmeticTyping.add_value_context_typed` and
-`sub_value_context_typed` now prove the corresponding `has_context_type`
-judgments for both function values, including the outer persistence modality.
-They are polymorphic in the primitive-operation context `Φ`, since these
-library functions use no primitive-operation typing assumptions.
-
-The derivation has three checked parts:
-
-- `NatArithmeticInstances` derives each closed natural-input instance by
-  induction, starting from `CT_Const` and using certified deterministic
-  reductions. The smaller recursive call is typed by the induction hypothesis;
-  the existing execution-correctness theorems are not used as typing premises.
-- `NatArithmeticTyping.arithmetic_body_typing` classifies a world by the pair
-  of input values. `nat_graph_joinable` proves that the precise natural result
-  can be combined across these fibers, with all additional world variables
-  retained.
-- Lambda introduction and `CT_ArrowIntro` assemble the two arrows;
-  `CT_PersistIntro` establishes the original persistent function specification.
-
-The added general rules are `CT_Conv` (preserves both result sets and must
-termination), `CT_ArrowIntro` (a value's applications must have actual typing
-derivations), and `CT_FiberCases` (requires explicit fiber coverage and result
-joinability). Their soundness lemmas are connected to `Fundamental` in
-`ContextTyping.Soundness`; value-arrow soundness is proved in
-`SoundnessArrowIntro`. Existing denotation and `CT_Fix` are unchanged.
-No assumption of fiber stability for arbitrary arrows or persistent results
-is introduced.
-The BST proof additionally uses `CT_ChooseUnder` and `CT_NodeUnderGraph` for
-terminating extra choice branches and conditional tree coverage. Their
-soundness is proved in `SoundnessChoice` and `SoundnessTree`, respectively,
-and both are connected to `Fundamental`.
-
-The declarative calculus now also has `CT_CtxCases`: a finite disjunctive
-cover of contexts, with a typing derivation under every alternative and an
-unchanged erased environment. Its soundness is proved by
-`fundamental_ctx_cases_case` and included in `Fundamental`.
-`ContextTyping.Subtyping` supplies reflexivity, transitivity, and intersection
-projections without adding primitive typing rules.
-
-The original `CT_Fix` has a mixed-world limitation.
-`fix_rec_arg_impossible_at_min_zero` proves that a parent world with minimum
-argument measure zero has no well-typed strictly smaller
-recursive argument in any extension. This includes mixed worlds containing
-both zero and positive inputs. Checking a recursive body after selecting its
-positive-input stores therefore requires more than the new context-cover
-rule: the recursive hypothesis must remain justified after that selection.
-The arithmetic derivations above avoid that premise by using syntactic
-induction on closed input instances and joining only precise base results.
-The BST derivation extends this approach with conditional tree coverage;
-it does not add a general recursive typing rule.
-
-The complete project builds with the commands below. The final BST proof
-and its dependencies also passed an independent recursive `rocq check`.
-`Print Assumptions` reports only the project's existing classical logic,
-indefinite description, functional/propositional extensionality, and proof
-irrelevance assumptions; no new axioms or admitted proofs are introduced.
-
-The comparison with the paper's arrow and fixpoint definitions, including a
-mixed-world analysis of Example 3.3 and the distinction between checked lemmas
-and a mathematical countermodel, is recorded in
-[SemanticsAudit.md](SemanticsAudit.md).
-
-Build with the project's opam environment:
-
-```bash
+```sh
 opam exec -- rocq makefile -f _CoqProject -o Makefile
-opam exec -- make -j8
+opam exec -- make -j4 \
+  CaseStudy/theories/MayMustIndependentTyping.vo \
+  CaseStudy/theories/MayMustTyping.vo \
+  CaseStudy/theories/BSTGeneratorContextTyping.vo \
+  CaseStudy/theories/MergeWorkerTyping.vo
 ```
+
+To build the entire project instead, run `opam exec -- make -j4` after
+generating the Makefile.
+
+After compilation, independently recheck the compiled proofs and their
+imported dependencies with the Rocq kernel checker:
+
+```sh
+opam exec -- rocq check -silent $(awk '/^-R/{print}' _CoqProject) \
+  CaseStudy.MayMustIndependentTyping \
+  CaseStudy.MayMustTyping \
+  CaseStudy.BSTGeneratorContextTyping \
+  CaseStudy.MergeWorkerTyping
+```
+
+With `-silent`, a successful check exits with status 0 and produces no output.
+To inspect the theorem statements and their logical assumptions:
+
+```sh
+opam exec -- rocq top -quiet $(awk '/^-R/{print}' _CoqProject) <<'EOF'
+From CaseStudy Require Import MayMustIndependentTyping MayMustTyping
+  BSTGeneratorContextTyping MergeWorkerTyping.
+Check may_help_must_context_typed.
+Check must_help_may_context_typed.
+Check bst_gen_type_judgement_holds.
+Check merge_worker_incorrect_context_typed.
+Print Assumptions may_help_must_context_typed.
+Print Assumptions must_help_may_context_typed.
+Print Assumptions bst_gen_type_judgement_holds.
+Print Assumptions merge_worker_incorrect_context_typed.
+EOF
+```
+
+These proofs use the project's existing classical logic, indefinite
+description, extensionality, and proof-irrelevance assumptions; they should
+not be read as axiom-free results. For interactive checking, follow the
+[VS Code / VS Rocq setup](../README.md#vs-code--vs-rocq) and open the main
+proof files listed above.
+
+## May/must analysis (Figure 6)
+
+Both examples use native integers and an arbitrary free function `g` satisfying
+its stated context type. The proofs type the programs under that assumption;
+they do not assume a particular implementation of `g`.
+
+| Example | Context-typing theorem | Fundamental corollary |
+| --- | --- | --- |
+| Fig. 6(a), `may_help_must g` | `may_help_must_context_typed` | `may_help_must_context_sound` |
+| Fig. 6(b), `must_help_may g` | `must_help_may_context_typed` | `must_help_may_context_sound` |
+
+**Variant:** Fig. 6(a) tests `y >= 10`, as requested, rather than the paper's
+`y > 10`. Its result remains the specified Under type for `1`, with an
+independent second argument. Fig. 6(b) establishes the sum of the Over types
+for `2` and `5`.
+
+See [MayMustFormalization.md](MayMustFormalization.md) for the specifications
+and proof details.
+
+## BST generator (Figure 7)
+
+The closed term `bst_gen_program` has the full persistent type `bst_gen_ty`.
+Its Under result covers trees satisfying the strict BST predicate and exact
+membership condition `tree_mem n t <-> lo < n <= lo + r`.
+
+The corrected persistent range-function contract uses `x <= y` as its domain
+condition and both Over and Under results for `x <= ν <= y`. In particular,
+`range 1 r` is valid at `r = 1`.
+
+In [BSTGeneratorContextTyping.v](theories/BSTGeneratorContextTyping.v):
+
+- `bst_gen_context_typed` proves the context-typing judgment.
+- `bst_gen_type_judgement_holds` proves the named target proposition
+  `bst_gen_type_judgement` from `BSTGeneratorProgram.v`.
+- `bst_gen_denotational_sound` is the Fundamental corollary.
+
+For the proof route, read [BSTPositiveTyping.v](theories/BSTPositiveTyping.v)
+(the positive branch), [BSTCallTyping.v](theories/BSTCallTyping.v)
+(induction over call sizes), then the main proof entry.
+
+## Incorrectness reasoning (Figure 8)
+
+The original recursive value `IncorrectMerge.merge_value` has the complete
+independent-arrow specification `merge_incorrect_ty`: independent inputs
+covering sorted lists expose an unsorted output through the result sum.
+The main theorem types the original fixed-point value directly, without an
+explicit η-expanded wrapper.
+
+In [MergeWorkerTyping.v](theories/MergeWorkerTyping.v):
+
+- `merge_worker_incorrect_context_typed` proves the context-typing judgment.
+- `merge_worker_incorrect_context_sound` is the Fundamental corollary.
+
+[MergeTraceTyping.v](theories/MergeTraceTyping.v) also proves the worker's
+precise ordinary-arrow type and the finite-trace type on p. 25.
+[MergeReduction.v](theories/MergeReduction.v) proves exact execution and must
+termination, including `merge [1;2] [3;4] →* [1;3;2;4]`.
+The external caller using `sorted_list_gen` on p. 25 is not yet given a
+context-typing derivation.
+
+See [IncorrectnessFormalization.md](IncorrectnessFormalization.md) for the
+specifications, independence requirements, and proof route.
+
+## Shared support and other modules
+
+- [CaseTypes.v](theories/CaseTypes.v) provides shared specification helpers.
+- [NatArithmeticTyping.v](theories/NatArithmeticTyping.v) proves
+  `add_value_context_typed` and `sub_value_context_typed`, including persistence
+  and exact natural-number results. These library proofs support the BST case.
+- [AddedTypingRules.md](AddedTypingRules.md) lists the added typing rules in
+  LaTeX notation. Their soundness proofs are connected to `Fundamental`.
+- `Section1Intro.v`, `Section2Typing.v`, `Section3Logic.v`, and
+  `Section4Extension.v` retain introductory specifications. `MayMust.v` and
+  `DisproveMerge.v` retain older specifications; use the entries above for the
+  proved revised examples.
+- [SemanticsAudit.md](SemanticsAudit.md) and
+  [Example33Counterexample.md](Example33Counterexample.md) discuss the original
+  `CT_Fix` mixed-world limitation. The case-study proofs leave that rule and
+  the type denotation unchanged.

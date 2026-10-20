@@ -150,6 +150,7 @@ ContextTyping/theories/SoundnessFixApply.v
 ContextTyping/theories/SoundnessFixSelf.v
 ContextTyping/theories/SoundnessFix.v
 ContextTyping/theories/SoundnessArrowIntro.v
+ContextTyping/theories/SoundnessWandIntro.v
 ContextTyping/theories/SoundnessPersist.v
 ContextTyping/theories/SoundnessChoice.v
 ContextTyping/theories/SoundnessTree.v
@@ -203,3 +204,11 @@ CaseStudy/theories/BSTGeneratorProgram.v
 CaseStudy/theories/BSTGeneratorUnfolding.v
 CaseStudy/theories/BSTGeneratorTyping.v
 CaseStudy/theories/DisproveMerge.v
+CaseStudy/theories/MergeProgram.v
+CaseStudy/theories/MergeReduction.v
+CaseStudy/theories/MergeGraph.v
+CaseStudy/theories/MergeTyping.v
+CaseStudy/theories/MergeIncorrectness.v
+CaseStudy/theories/MergeTraceQualifier.v
+CaseStudy/theories/MergeTraceTyping.v
+CaseStudy/theories/MergeWorkerTyping.v

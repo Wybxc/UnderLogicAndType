@@ -27,7 +27,7 @@ From ContextTyping Require Import PrimOpContext PrimOpConcreteContext Typing Typ
   SoundnessCaseTactics
   SoundnessLam SoundnessVar
   SoundnessApp SoundnessMatch SoundnessFix SoundnessPersist SoundnessArrowIntro
-  SoundnessChoice SoundnessTree.
+  SoundnessChoice SoundnessTree SoundnessWandIntro.
 
 Local Notation StoreT := (gmap atom value) (only parsing).
 Local Notation WorldT := (World (V := value)) (only parsing).
@@ -1068,6 +1068,7 @@ Proof.
   - eapply fundamental_ctx_cases_case; eauto.
   - eapply fundamental_conv_case; eauto.
   - eapply fundamental_value_arrow_case; eauto.
+  - eapply fundamental_value_wand_case; eauto.
   - eapply fundamental_fiber_cases_case; eauto.
   - eapply fundamental_choose_under_case; eauto using typing_wf_under.
   - eapply fundamental_node_under_graph_case; eauto.
